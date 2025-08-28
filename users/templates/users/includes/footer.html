@@ -1,0 +1,111 @@
+{% load static %}
+<footer class="bg-light-subtle py-5 mt-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Лого и описание -->
+            <div class="col-lg-4">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-envelope fs-4 text-secondary me-2"></i>
+                    <span class="fs-5 text-muted">MailService</span>
+                </div>
+                <p class="text-muted small opacity-75">
+                    Профессиональный инструмент для эффективных email-рассылок
+                </p>
+                <div class="d-flex mt-3">
+                    <a href="#" class="text-decoration-none me-3 text-secondary opacity-75 hover-opacity-100">
+                        <i class="bi bi-telegram fs-5"></i>
+                    </a>
+                    <a href="#" class="text-decoration-none me-3 text-secondary opacity-75 hover-opacity-100">
+                        <i class="bi bi-github fs-5"></i>
+                    </a>
+                    <a href="#" class="text-decoration-none text-secondary opacity-75 hover-opacity-100">
+                        <i class="bi bi-linkedin fs-5"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Навигация -->
+            <div class="col-lg-2 col-md-4">
+                <h6 class="text-muted mb-3 small text-uppercase fw-normal">Навигация</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <a href="#"
+                           class="text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                            Рассылки
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#"
+                           class="text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                            Клиенты
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#"
+                           class="text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                            Сообщения
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Аккаунт -->
+            <div class="col-lg-3 col-md-4">
+                <h6 class="text-muted mb-3 small text-uppercase fw-normal">Аккаунт</h6>
+                <ul class="list-unstyled">
+                    {% if user.is_authenticated %}
+                    <li class="mb-2">
+                        <a href="{% url 'users:profile_edit' %}"
+                           class="text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                            Профиль
+                        </a>
+                    </li>
+                    <li>
+                        <form method="post" action="{% url 'users:logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-link p-0 text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                                Выйти
+                            </button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li class="mb-2">
+                        <a href="{% url 'users:login' %}"
+                           class="text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                            Вход
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'users:register' %}"
+                           class="text-decoration-none text-muted small opacity-75 hover-opacity-100">
+                            Регистрация
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Контакты -->
+            <div class="col-lg-3 col-md-4">
+                <h6 class="text-muted mb-3 small text-uppercase fw-normal">Контакты</h6>
+                <ul class="list-unstyled text-muted small">
+                    <li class="mb-2 opacity-75">
+                        <i class="bi bi-envelope me-2"></i>support@mailservice.com
+                    </li>
+                    <li class="opacity-75">
+                        <i class="bi bi-telephone me-2"></i>+7 (123) 456-78-90
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <hr class="my-4 opacity-10">
+
+        <div class="text-center">
+            <p class="text-muted small opacity-50 mb-0">
+                &copy; {% now "Y" %} MailService. Все права защищены.
+            </p>
+        </div>
+    </div>
+</footer>
