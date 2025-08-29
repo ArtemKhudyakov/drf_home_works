@@ -11,6 +11,7 @@ from .views import (
     email_verification,
     toggle_user_block
 )
+from .views import UserProfileUpdateAPIView, UserProfileRetrieveAPIView, UserListAPIView, UserListHTMLView
 
 app_name = "users"
 
@@ -55,4 +56,10 @@ urlpatterns = [
     ),
     path("manager/users/", UserListView.as_view(), name="user_list"),
     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
+    path('api/users/', UserListAPIView.as_view(), name='api_user_list'),
+    path('api/profile/', UserProfileRetrieveAPIView.as_view(), name='api_profile'),
+    path('api/profile/update/', UserProfileUpdateAPIView.as_view(), name='api_profile_update'),
+    path('api/profile/<int:pk>/', UserProfileRetrieveAPIView.as_view(), name='api_profile_detail'),
+    path('api/profile/<int:pk>/update/', UserProfileUpdateAPIView.as_view(), name='api_profile_update_detail'),
+    path('manager/users/html/', UserListHTMLView.as_view(), name='user_list_html')
 ]

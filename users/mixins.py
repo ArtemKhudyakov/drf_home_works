@@ -1,13 +1,14 @@
 from django.core.exceptions import PermissionDenied
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 
-class ManagerRequiredMixin:
-    """Только для менеджеров (role='manager')"""
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role != "manager":
-            raise PermissionDenied("Доступ только для менеджеров")
-        return super().dispatch(request, *args, **kwargs)
+# class ManagerRequiredMixin:
+#     """Только для менеджеров (role='manager')"""
+#
+#     def dispatch(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated or request.user.role != "manager":
+#             raise PermissionDenied("Доступ только для менеджеров")
+#         return super().dispatch(request, *args, **kwargs)
 
 
 class UserAccessMixin:
@@ -23,3 +24,9 @@ class UserAccessMixin:
         if not request.user.is_authenticated or (obj.owner != request.user and request.user.role != "manager"):
             raise PermissionDenied("Нет доступа к этому объекту")
         return super().dispatch(request, *args, **kwargs)
+
+
+class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Миксин только для менеджеров и админов"""
+    def test_func(self):
+        return self.request.user.role == 'manager' or self.request.user.is_staff

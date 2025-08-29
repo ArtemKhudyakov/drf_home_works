@@ -10,7 +10,7 @@
 </head>
 <body>
     {% include "includes/header.html" %}
-
+    
     <main class="container mt-4">
         {% if messages %}
         <div class="messages">
@@ -22,13 +22,13 @@
             {% endfor %}
         </div>
         {% endif %}
-
+        
         {% block content %}
         {% endblock %}
     </main>
-
+    
     {% include "includes/footer.html" %}
-
+    
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/scripts.js' %}"></script>
 </body>

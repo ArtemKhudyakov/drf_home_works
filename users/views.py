@@ -16,17 +16,24 @@ from django.views.generic import CreateView, ListView, UpdateView
 from .forms import UserProfileForm, UserRegistrationForm
 from .mixins import ManagerRequiredMixin
 from .models import User
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from .serializers import UserProfileSerializer
+from .permissions import IsOwnerOrManager
+from django.contrib.auth import get_user_model
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 
 class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy("greeting")
+    next_page = reverse_lazy("home")
 
 
 class UserRegisterView(CreateView):
     model = User
     form_class = UserRegistrationForm
     template_name = "users/registration.html"
-    success_url = reverse_lazy("users:profile_edit")
+    success_url = reverse_lazy("home")
 
     def form_valid(self, form):
 
@@ -100,3 +107,75 @@ def toggle_user_block(request, user_id):
     user.save()
     messages.success(request, f"Пользователь {user.email} {'заблокирован' if user.is_blocked else 'разблокирован'}")
     return redirect("users:user_list")
+
+class UserProfileUpdateAPIView(generics.UpdateAPIView):
+    """
+    Эндпоинт для редактирования профиля пользователя
+    Доступ: только аутентифицированные пользователи могут редактировать свой профиль
+    Менеджеры могут редактировать любой профиль
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrManager]
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        if user_id:
+            return generics.get_object_or_404(User, pk=user_id)
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
+    """
+    Эндпоинт для просмотра профиля пользователя
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        if user_id:
+            # Просмотр другого пользователя
+            return generics.get_object_or_404(User, pk=user_id)
+        else:
+            # Просмотр своего профиля
+            return self.request.user
+
+
+User = get_user_model()
+
+
+class UserListAPIView(generics.ListAPIView):
+    """
+    Эндпоинт для просмотра списка пользователей
+    Только для менеджеров и админов
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Проверяем права
+        if not (self.request.user.role == 'manager' or self.request.user.is_staff):
+            raise permissions.PermissionDenied(
+                "Только менеджеры и администраторы могут просматривать список пользователей")
+
+        return User.objects.all().order_by('-date_joined')
+
+
+class UserListHTMLView(ManagerRequiredMixin, TemplateView):
+    """HTML страница списка пользователей"""
+    template_name = "users/user_list_api.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['users'] = User.objects.all().order_by('-date_joined')
+        return context
+
+
