@@ -1,6 +1,5 @@
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-
+from django.core.exceptions import PermissionDenied
 
 # class ManagerRequiredMixin:
 #     """Только для менеджеров (role='manager')"""
@@ -28,5 +27,6 @@ class UserAccessMixin:
 
 class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Миксин только для менеджеров и админов"""
+
     def test_func(self):
-        return self.request.user.role == 'manager' or self.request.user.is_staff
+        return self.request.user.role == "manager" or self.request.user.is_staff

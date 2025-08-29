@@ -12,4 +12,4 @@ class IsOwnerOrManager(permissions.BasePermission):
             return request.user.is_authenticated
 
         # Запись разрешена только владельцу или менеджеру
-        return obj == request.user or request.user.role == 'manager'
+        return obj == request.user or request.user.role == "manager"

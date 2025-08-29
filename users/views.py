@@ -2,8 +2,8 @@ import secrets
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
@@ -11,18 +11,15 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.views.generic import CreateView, ListView, UpdateView
+from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from rest_framework import generics, permissions
+from rest_framework.response import Response
 
 from .forms import UserProfileForm, UserRegistrationForm
 from .mixins import ManagerRequiredMixin
 from .models import User
-from rest_framework import generics, permissions
-from rest_framework.response import Response
-from .serializers import UserProfileSerializer
 from .permissions import IsOwnerOrManager
-from django.contrib.auth import get_user_model
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .serializers import UserProfileSerializer
 
 
 class CustomLogoutView(LogoutView):
@@ -108,23 +105,25 @@ def toggle_user_block(request, user_id):
     messages.success(request, f"Пользователь {user.email} {'заблокирован' if user.is_blocked else 'разблокирован'}")
     return redirect("users:user_list")
 
+
 class UserProfileUpdateAPIView(generics.UpdateAPIView):
     """
     Эндпоинт для редактирования профиля пользователя
     Доступ: только аутентифицированные пользователи могут редактировать свой профиль
     Менеджеры могут редактировать любой профиль
     """
+
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrManager]
 
     def get_object(self):
-        user_id = self.kwargs.get('pk')
+        user_id = self.kwargs.get("pk")
         if user_id:
             return generics.get_object_or_404(User, pk=user_id)
         return self.request.user
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -132,15 +131,17 @@ class UserProfileUpdateAPIView(generics.UpdateAPIView):
 
         return Response(serializer.data)
 
+
 class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
     """
     Эндпоинт для просмотра профиля пользователя
     """
+
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        user_id = self.kwargs.get('pk')
+        user_id = self.kwargs.get("pk")
         if user_id:
             # Просмотр другого пользователя
             return generics.get_object_or_404(User, pk=user_id)
@@ -157,25 +158,26 @@ class UserListAPIView(generics.ListAPIView):
     Эндпоинт для просмотра списка пользователей
     Только для менеджеров и админов
     """
+
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         # Проверяем права
-        if not (self.request.user.role == 'manager' or self.request.user.is_staff):
+        if not (self.request.user.role == "manager" or self.request.user.is_staff):
             raise permissions.PermissionDenied(
-                "Только менеджеры и администраторы могут просматривать список пользователей")
+                "Только менеджеры и администраторы могут просматривать список пользователей"
+            )
 
-        return User.objects.all().order_by('-date_joined')
+        return User.objects.all().order_by("-date_joined")
 
 
 class UserListHTMLView(ManagerRequiredMixin, TemplateView):
     """HTML страница списка пользователей"""
+
     template_name = "users/user_list_api.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['users'] = User.objects.all().order_by('-date_joined')
+        context["users"] = User.objects.all().order_by("-date_joined")
         return context
-
-
