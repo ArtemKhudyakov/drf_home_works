@@ -1,11 +1,11 @@
-from django.core.exceptions import ValidationError
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from .models import User
-from django.contrib.auth.forms import PasswordResetForm
+from django.conf import settings
+from django.contrib.auth.forms import PasswordResetForm, UserCreationForm
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.template import loader
-from django.conf import settings
+
+from .models import User
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -48,14 +48,15 @@ class UserProfileForm(forms.ModelForm):
 
 
 class CustomPasswordResetForm(PasswordResetForm):
-    def send_mail(self, subject_template_name, email_template_name,
-                  context, from_email, to_email, html_email_template_name=None):
+    def send_mail(
+        self, subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name=None
+    ):
         """
         Кастомная отправка письма для сброса пароля
         """
         subject = loader.render_to_string(subject_template_name, context)
         # Убираем переносы строк в subject
-        subject = ''.join(subject.splitlines())
+        subject = "".join(subject.splitlines())
         body = loader.render_to_string(email_template_name, context)
 
         send_mail(

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
-from django.core.validators import FileExtensionValidator
 
 
 class User(AbstractUser):
@@ -57,19 +57,11 @@ class User(AbstractUser):
     ]
 
     ROLES = (
-        ('user', 'Пользователь'),
-        ('manager', 'Менеджер'),
+        ("user", "Пользователь"),
+        ("manager", "Менеджер"),
     )
-    role = models.CharField(
-        max_length=10,
-        choices=ROLES,
-        default='user',
-        verbose_name="Роль"
-    )
-    is_blocked = models.BooleanField(
-        default=False,
-        verbose_name="Заблокирован"
-    )
+    role = models.CharField(max_length=10, choices=ROLES, default="user", verbose_name="Роль")
+    is_blocked = models.BooleanField(default=False, verbose_name="Заблокирован")
 
     def __str__(self):
         return self.username

@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from .models import Course, Lesson
 
 
@@ -11,7 +12,6 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "preview", 'course', 'video_link')
+    list_display = ("name", "description", "preview", "course", "video_link")
     search_fields = ("name", "description")
     list_filter = ("course",)
-

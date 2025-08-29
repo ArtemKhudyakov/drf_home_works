@@ -1,25 +1,21 @@
+import secrets
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-
-from django.views.generic import CreateView, UpdateView
-from django.contrib.auth import login
-from django.contrib import messages
-from django.core.mail import send_mail
-
-from .forms import UserRegistrationForm, UserProfileForm
-from .models import User
-from django.conf import settings
-
-from django.views.generic import ListView
-from .mixins import ManagerRequiredMixin
-
-from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.generic import CreateView, ListView, UpdateView
 
-import secrets
+from .forms import UserProfileForm, UserRegistrationForm
+from .mixins import ManagerRequiredMixin
+from .models import User
 
 
 class CustomLogoutView(LogoutView):
@@ -87,20 +83,20 @@ def email_verification(request, token):
 
 
 # Список всех пользователей (только для менеджеров)
-@method_decorator(cache_page(60 * 10), name='dispatch')
+@method_decorator(cache_page(60 * 10), name="dispatch")
 class UserListView(ManagerRequiredMixin, ListView):
     model = User
-    template_name = 'users/user_list.html'
-    context_object_name = 'users'
+    template_name = "users/user_list.html"
+    context_object_name = "users"
 
 
 # Блокировка/разблокировка пользователей
 def toggle_user_block(request, user_id):
-    if request.user.role != 'manager':
+    if request.user.role != "manager":
         raise PermissionDenied
 
     user = get_object_or_404(User, id=user_id)
     user.is_blocked = not user.is_blocked
     user.save()
     messages.success(request, f"Пользователь {user.email} {'заблокирован' if user.is_blocked else 'разблокирован'}")
-    return redirect('users:user_list')
+    return redirect("users:user_list")
