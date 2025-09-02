@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import User, Payment
+from .models import Payment, User
 
 
 class UserAdmin(BaseUserAdmin):
@@ -73,9 +73,9 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'payment_date', 'paid_course', 'paid_lesson', 'amount', 'payment_method')
-    list_filter = ('payment_method', 'payment_date')
-    search_fields = ('user__username', 'user__email', 'paid_course__name', 'paid_lesson__name')
+    list_display = ("id", "user", "payment_date", "paid_course", "paid_lesson", "amount", "payment_method")
+    list_filter = ("payment_method", "payment_date")
+    search_fields = ("user__username", "user__email", "paid_course__name", "paid_lesson__name")
     # readonly_fields = ('payment_date',)
     # list_display_links = ('id', 'user')
 
@@ -83,14 +83,14 @@ class PaymentAdmin(admin.ModelAdmin):
     def user_username(self, obj):
         return obj.user.username
 
-    user_username.short_description = 'Пользователь'
+    user_username.short_description = "Пользователь"
 
     def course_name(self, obj):
-        return obj.paid_course.name if obj.paid_course else '-'
+        return obj.paid_course.name if obj.paid_course else "-"
 
-    course_name.short_description = 'Курс'
+    course_name.short_description = "Курс"
 
     def lesson_name(self, obj):
-        return obj.paid_lesson.name if obj.paid_lesson else '-'
+        return obj.paid_lesson.name if obj.paid_lesson else "-"
 
-    lesson_name.short_description = 'Урок'
+    lesson_name.short_description = "Урок"

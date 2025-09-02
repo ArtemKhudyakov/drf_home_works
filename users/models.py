@@ -78,30 +78,21 @@ class User(AbstractUser):
         ]
 
 
-
 class Payment(models.Model):
     PAYMENT_METHODS = [
-        ('cash', 'Наличные'),
-        ('transfer', 'Перевод на счет'),
+        ("cash", "Наличные"),
+        ("transfer", "Перевод на счет"),
     ]
 
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name="Пользователь",
-        related_name='payments'
-    )
-    payment_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата оплаты"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", related_name="payments")
+    payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата оплаты")
     paid_course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
         verbose_name="Оплаченный курс",
         null=True,
         blank=True,
-        related_name='payments'
+        related_name="payments",
     )
     paid_lesson = models.ForeignKey(
         Lesson,
@@ -109,29 +100,22 @@ class Payment(models.Model):
         verbose_name="Оплаченный урок",
         null=True,
         blank=True,
-        related_name='payments'
+        related_name="payments",
     )
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name="Сумма оплаты"
-    )
-    payment_method = models.CharField(
-        max_length=10,
-        choices=PAYMENT_METHODS,
-        verbose_name="Способ оплаты"
-    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма оплаты")
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, verbose_name="Способ оплаты")
 
     class Meta:
         verbose_name = "Платеж"
         verbose_name_plural = "Платежи"
-        ordering = ['-payment_date']
+        ordering = ["-payment_date"]
 
     def __str__(self):
         return f"Платеж {self.user.username} - {self.amount} руб. ({self.get_payment_method_display()})"
 
     def clean(self):
         from django.core.exceptions import ValidationError
+
         if self.paid_course and self.paid_lesson:
             raise ValidationError("Можно оплатить либо курс, либо урок, но не оба одновременно.")
         if not self.paid_course and not self.paid_lesson:

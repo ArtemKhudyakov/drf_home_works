@@ -12,21 +12,17 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
+from .filters import PaymentFilter
 from .forms import UserProfileForm, UserRegistrationForm
 from .mixins import ManagerRequiredMixin
-from .models import User
+from .models import Payment, User
 from .permissions import IsOwnerOrManager
-from .serializers import UserProfileSerializer
-
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
-from .models import Payment
-from .serializers import PaymentSerializer
-from .filters import PaymentFilter
-
+from .serializers import PaymentSerializer, UserProfileSerializer
 
 
 class CustomLogoutView(LogoutView):
@@ -189,31 +185,41 @@ class UserListHTMLView(ManagerRequiredMixin, TemplateView):
         context["users"] = User.objects.all().order_by("-date_joined")
         return context
 
+
 class PaymentListAPIView(generics.ListAPIView):
     """Эндпоинт для получения списка платежей с фильтрацией"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = PaymentFilter
-    ordering_fields = ['payment_date', 'amount']
-    ordering = ['-payment_date']  # сортировка по умолчанию
+    ordering_fields = ["payment_date", "amount"]
+    ordering = ["-payment_date"]  # сортировка по умолчанию
+
 
 class PaymentRetrieveAPIView(generics.RetrieveAPIView):
     """Эндпоинт для получения детальной информации о платеже"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
 
 class PaymentCreateAPIView(generics.CreateAPIView):
     """Эндпоинт для создания нового платежа"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
 
 class PaymentUpdateAPIView(generics.UpdateAPIView):
     """Эндпоинт для обновления платежа"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
+
 class PaymentDestroyAPIView(generics.DestroyAPIView):
     """Эндпоинт для удаления платежа"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
