@@ -289,20 +289,20 @@ class Lesson(models.Model):
         verbose_name_plural = "РЈСЂРѕРєРё"
         db_table = "lessons"
 from rest_framework import serializers
-
 from .models import Course, Lesson
-
-
-class CourseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Course
-        fields = "__all__"
-
 
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = "__all__"
+
+class CourseSerializer(serializers.ModelSerializer):
+    lessons_count = serializers.IntegerField(read_only=True)  # в†ђ serializers.IntegerField!
+    lessons = LessonSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ["id", "name", "description", "preview", "lessons_count", "lessons"]
 from django.test import TestCase
 
 # Create your tests here.
@@ -332,14 +332,18 @@ urlpatterns = [
 ] + router.urls
 from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.viewsets import ModelViewSet
-
+from django.db.models import Count
 from .models import Course, Lesson
 from .serializer import CourseSerializer, LessonSerializer
 
-
 class CourseViewSet(ModelViewSet):
-    queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    queryset = Course.objects.all()
+
+    def get_queryset(self):
+        return Course.objects.annotate(
+            lessons_count=Count('lesson')
+        ).prefetch_related('lesson_set')
 
 
 class LessonCreateAPIView(CreateAPIView):
