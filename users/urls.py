@@ -15,6 +15,13 @@ from .views import (
     email_verification,
     toggle_user_block
 )
+from .views import (
+    PaymentListAPIView,
+    PaymentRetrieveAPIView,
+    PaymentCreateAPIView,
+    PaymentUpdateAPIView,
+    PaymentDestroyAPIView
+)
 
 app_name = "users"
 
@@ -65,4 +72,9 @@ urlpatterns = [
     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
+    path('payments/', PaymentListAPIView.as_view(), name='payment-list'),
+    path('payments/create/', PaymentCreateAPIView.as_view(), name='payment-create'),
+    path('payments/<int:pk>/', PaymentRetrieveAPIView.as_view(), name='payment-detail'),
+    path('payments/<int:pk>/update/', PaymentUpdateAPIView.as_view(), name='payment-update'),
+    path('payments/<int:pk>/delete/', PaymentDestroyAPIView.as_view(), name='payment-delete')
 ]
