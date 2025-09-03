@@ -23,6 +23,7 @@ from .mixins import ManagerRequiredMixin
 from .models import Payment, User
 from .permissions import IsOwnerOrManager
 from .serializers import PaymentSerializer, UserProfileSerializer
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 
 
 class CustomLogoutView(LogoutView):
@@ -223,3 +224,8 @@ class PaymentDestroyAPIView(generics.DestroyAPIView):
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
+
+class UserCreateApiView(CreateAPIView):
+    serializer_class = UserProfileSerializer
+    queryset = User.objects.all()

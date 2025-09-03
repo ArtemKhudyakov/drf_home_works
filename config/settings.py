@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv(override=True)
 
@@ -27,8 +28,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_filters",
     "rest_framework",
+    'rest_framework_simplejwt',
     "users",
     "lms",
+
 ]
 
 MIDDLEWARE = [
@@ -92,11 +95,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.OrderingFilter",
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
     ],
 }
 
@@ -154,4 +157,9 @@ CACHES = {
         "KEY_PREFIX": "mail_service_",
         "TIMEOUT": 60 * 15,  # 15 минут
     }
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }

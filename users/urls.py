@@ -18,7 +18,12 @@ from .views import (
     UserProfileUpdateView,
     UserRegisterView,
     email_verification,
-    toggle_user_block
+    toggle_user_block,
+    UserCreateApiView
+)
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
 )
 
 app_name = "users"
@@ -75,4 +80,7 @@ urlpatterns = [
     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/register/', UserCreateApiView.as_view(), name='user_api_register'),
 ]
