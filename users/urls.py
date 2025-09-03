@@ -5,6 +5,11 @@ from django.urls import path, reverse_lazy
 from .forms import CustomPasswordResetForm
 from .views import (
     CustomLogoutView,
+    PaymentCreateAPIView,
+    PaymentDestroyAPIView,
+    PaymentListAPIView,
+    PaymentRetrieveAPIView,
+    PaymentUpdateAPIView,
     UserListAPIView,
     UserListHTMLView,
     UserListView,
@@ -65,4 +70,9 @@ urlpatterns = [
     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
+    path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
+    path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
+    path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
+    path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
+    path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
 ]

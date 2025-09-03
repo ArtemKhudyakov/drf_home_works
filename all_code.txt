@@ -1,4 +1,26 @@
-﻿"""
+﻿#!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
+import os
+import sys
+
+
+def main():
+    """Run administrative tasks."""
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
+    execute_from_command_line(sys.argv)
+
+
+if __name__ == "__main__":
+    main()
+"""
 ASGI config for config project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
@@ -144,7 +166,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 AUTH_USER_MODEL = "users.User"
 
 LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "greeting"
+LOGOUT_REDIRECT_URL = "home"
 LOGIN_URL = "users:login"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -176,9 +198,8 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-
     path("users/", include("users.urls", namespace="users")),
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path("", TemplateView.as_view(template_name="home.html"), name="home"),
     path("courses/", include("lms.urls", namespace="courses")),
     path("lessons/", include("lms.urls", namespace="lessons")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
@@ -198,6 +219,202 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 application = get_wsgi_application()
+from django.contrib import admin
+
+from .models import Course, Lesson
+
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "preview")
+    search_fields = ("name", "description")
+    # list_filter = ("")
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "preview", "course", "video_link")
+    search_fields = ("name", "description")
+    list_filter = ("course",)
+from django.apps import AppConfig
+
+
+class LmsConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "lms"
+from django.core.validators import FileExtensionValidator
+from django.db import models
+
+
+class Course(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="РќР°Р·РІР°РЅРёРµ РєСѓСЂСЃР°")
+    description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ РєСѓСЂСЃР°")
+    preview = models.ImageField(
+        upload_to="courses/previews",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
+        verbose_name="РџСЂРµРІСЊСЋС€РєР° РєСѓСЂСЃР°",
+        help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё РєСѓСЂСЃР°",
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "РљСѓСЂСЃ"
+        verbose_name_plural = "РљСѓСЂСЃС‹"
+        db_table = "Courses"
+
+
+class Lesson(models.Model):
+    name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
+    description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
+    preview = models.ImageField(
+        upload_to="lessons/previews",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
+        verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
+        help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
+    )
+    video_link = models.URLField(max_length=500, blank=True, null=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "РЈСЂРѕРє"
+        verbose_name_plural = "РЈСЂРѕРєРё"
+        db_table = "lessons"
+from rest_framework import serializers
+from .models import Course, Lesson
+
+class LessonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lesson
+        fields = "__all__"
+
+class CourseSerializer(serializers.ModelSerializer):
+    lessons_count = serializers.IntegerField(read_only=True)  # в†ђ serializers.IntegerField!
+    lessons = LessonSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ["id", "name", "description", "preview", "lessons_count", "lessons"]
+from django.test import TestCase
+
+# Create your tests here.
+from django.urls import path
+from rest_framework.routers import SimpleRouter
+
+from .views import (
+    CourseViewSet,
+    LessonCreateAPIView,
+    LessonDestroyAPIView,
+    LessonListAPIView,
+    LessonRetrieveAPIView,
+    LessonUpdateAPIView
+)
+
+app_name = "lms"
+
+router = SimpleRouter()
+router.register(r"courses", CourseViewSet)
+
+urlpatterns = [
+    path("lessons_list/", LessonListAPIView.as_view(), name="lessons_list"),
+    path("lesson/<int:pk>/", LessonRetrieveAPIView.as_view(), name="lesson"),
+    path("lesson/create/", LessonCreateAPIView.as_view(), name="lesson-create"),
+    path("lesson/<int:pk>/delete/", LessonDestroyAPIView.as_view(), name="lesson-delete"),
+    path("lesson/update/<int:pk>/update/", LessonUpdateAPIView.as_view(), name="lesson-update"),
+] + router.urls
+from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.viewsets import ModelViewSet
+from django.db.models import Count
+from .models import Course, Lesson
+from .serializer import CourseSerializer, LessonSerializer
+
+class CourseViewSet(ModelViewSet):
+    serializer_class = CourseSerializer
+    queryset = Course.objects.all()
+
+    def get_queryset(self):
+        return Course.objects.annotate(
+            lessons_count=Count('lesson')
+        ).prefetch_related('lesson_set')
+
+
+class LessonCreateAPIView(CreateAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+
+
+class LessonDestroyAPIView(DestroyAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+
+
+class LessonUpdateAPIView(UpdateAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+
+
+class LessonRetrieveAPIView(RetrieveAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+
+
+class LessonListAPIView(ListAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+
+from lms.models import Course, Lesson
+
+
+class Command(BaseCommand):
+    help = "РџРѕР»РЅР°СЏ РїРµСЂРµР·Р°РіСЂСѓР·РєР° РґР°РЅРЅС‹С… LMS (РѕС‡РёСЃС‚РєР° + Р·Р°РіСЂСѓР·РєР° С„РёРєСЃС‚СѓСЂ)"
+
+    def add_arguments(self, parser):
+        parser.add_argument("--noinput", action="store_true", help="РџСЂРѕРїСѓСЃС‚РёС‚СЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ")
+
+    def handle(self, *args, **options):
+        if not options["noinput"]:
+            confirm = input("вљ пёЏ  Р’С‹ СѓРІРµСЂРµРЅС‹? Р­С‚Рѕ СѓРґР°Р»РёС‚ РІСЃРµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРµ РєСѓСЂСЃС‹ Рё СѓСЂРѕРєРё. (y/N): ")
+            if confirm.lower() != "y":
+                self.stdout.write(self.style.WARNING("РћС‚РјРµРЅРµРЅРѕ."))
+                return
+
+        self.stdout.write(self.style.WARNING("РћС‡РёСЃС‚РєР° РґР°РЅРЅС‹С… LMS..."))
+
+        # РћС‡РёС‰Р°РµРј РґР°РЅРЅС‹Рµ РІ РїСЂР°РІРёР»СЊРЅРѕРј РїРѕСЂСЏРґРєРµ (СЃРЅР°С‡Р°Р»Р° СѓСЂРѕРєРё, РїРѕС‚РѕРј РєСѓСЂСЃС‹)
+        Lesson.objects.all().delete()
+        Course.objects.all().delete()
+
+        self.stdout.write(self.style.SUCCESS("Р”Р°РЅРЅС‹Рµ РѕС‡РёС‰РµРЅС‹."))
+        self.stdout.write(self.style.SUCCESS("Р—Р°РіСЂСѓР·РєР° С„РёРєСЃС‚СѓСЂ..."))
+
+        # Р—Р°РіСЂСѓР¶Р°РµРј С„РёРєСЃС‚СѓСЂС‹
+        try:
+            call_command("loaddata", "lms_data.json")
+            self.stdout.write(self.style.SUCCESS("вњ… Р¤РёРєСЃС‚СѓСЂС‹ СѓСЃРїРµС€РЅРѕ Р·Р°РіСЂСѓР¶РµРЅС‹!"))
+
+            # РџРѕРєР°Р·С‹РІР°РµРј СЃС‚Р°С‚РёСЃС‚РёРєСѓ
+            course_count = Course.objects.count()
+            lesson_count = Lesson.objects.count()
+            self.stdout.write(self.style.SUCCESS(f"рџ“Љ Р—Р°РіСЂСѓР¶РµРЅРѕ: {course_count} РєСѓСЂСЃРѕРІ, {lesson_count} СѓСЂРѕРєРѕРІ"))
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"вќЊ РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С„РёРєСЃС‚СѓСЂ: {e}"))
+            # Р•СЃР»Рё С„Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ, РїСЂРµРґР»Р°РіР°РµРј СЃРѕР·РґР°С‚СЊ РµРіРѕ
+            if "No such file or directory" in str(e):
+                self.stdout.write(self.style.NOTICE("рџ’Ў РЎРѕР·РґР°Р№С‚Рµ С„РёРєСЃС‚СѓСЂСѓ РєРѕРјР°РЅРґРѕР№:"))
+                self.stdout.write(
+                    self.style.NOTICE("python manage.py dumpdata lms --indent 2 --output lms/fixtures/lms_data.json")
+                )
 # Generated by Django 5.2.5 on 2025-08-29 06:49
 
 import django.core.validators
@@ -277,151 +494,555 @@ class Migration(migrations.Migration):
         ),
     ]
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.translation import gettext_lazy as _
 
-from .models import Course, Lesson
-
-
-@admin.register(Course)
-class CourseAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "preview")
-    search_fields = ("name", "description")
-    # list_filter = ("")
+from .models import User
 
 
-@admin.register(Lesson)
-class LessonAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "preview", "course", "video_link")
-    search_fields = ("name", "description")
-    list_filter = ("course",)
+class UserAdmin(BaseUserAdmin):
+    list_display = ("id", "username", "email", "role", "is_blocked", "is_staff", "is_superuser")
+    list_filter = ("role", "is_blocked", "is_staff", "is_superuser")
+    search_fields = ("username", "email")
+    ordering = ("username",)
+
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("email", "country", "phone", "avatar")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_blocked",
+                    "is_staff",
+                    "is_superuser",
+                    "role",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "email", "password1", "password2", "role"),
+            },
+        ),
+    )
+
+    actions = ["block_users", "unblock_users", "make_managers", "make_regular_users"]
+
+    def block_users(self, request, queryset):
+        queryset.update(is_blocked=True)
+        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅС‹")
+
+    block_users.short_description = "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
+
+    def unblock_users(self, request, queryset):
+        queryset.update(is_blocked=False)
+        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅС‹")
+
+    unblock_users.short_description = "Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
+
+    def make_managers(self, request, queryset):
+        queryset.update(role="manager")
+        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СЃС‚Р°Р»Рё РјРµРЅРµРґР¶РµСЂР°РјРё")
+
+    make_managers.short_description = "РЎРґРµР»Р°С‚СЊ РјРµРЅРµРґР¶РµСЂР°РјРё"
+
+    def make_regular_users(self, request, queryset):
+        queryset.update(role="user")
+        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СЃС‚Р°Р»Рё РѕР±С‹С‡РЅС‹РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРјРё")
+
+    make_regular_users.short_description = "РЎРґРµР»Р°С‚СЊ РѕР±С‹С‡РЅС‹РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРјРё"
+
+
+admin.site.register(User, UserAdmin)
 from django.apps import AppConfig
 
 
-class LmsConfig(AppConfig):
+class UsersConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "lms"
+    name = "users"
+from django import forms
+from django.conf import settings
+from django.contrib.auth.forms import PasswordResetForm, UserCreationForm
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.template import loader
+
+from .models import User
+
+
+class UserRegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.filter(email=email).exists():
+            raise ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј email СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
+        return email
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.filter(username=username).exists():
+            raise ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚")
+        return username
+
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "email",
+            "country",
+            "phone",
+            "avatar",
+            "password1",
+            "password2",
+        )
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("username", "email", "country", "phone", "avatar")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].disabled = True  # РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅРµР»СЊР·СЏ РјРµРЅСЏС‚СЊ
+        self.fields["email"].disabled = True  # Email С‚РѕР¶Рµ РЅРµР»СЊР·СЏ РјРµРЅСЏС‚СЊ
+
+
+class CustomPasswordResetForm(PasswordResetForm):
+    def send_mail(
+        self, subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name=None
+    ):
+        """
+        РљР°СЃС‚РѕРјРЅР°СЏ РѕС‚РїСЂР°РІРєР° РїРёСЃСЊРјР° РґР»СЏ СЃР±СЂРѕСЃР° РїР°СЂРѕР»СЏ
+        """
+        subject = loader.render_to_string(subject_template_name, context)
+        # РЈР±РёСЂР°РµРј РїРµСЂРµРЅРѕСЃС‹ СЃС‚СЂРѕРє РІ subject
+        subject = "".join(subject.splitlines())
+        body = loader.render_to_string(email_template_name, context)
+
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=settings.EMAIL_HOST_USER,  # РСЃРїРѕР»СЊР·СѓРµРј email РёР· РЅР°СЃС‚СЂРѕРµРє
+            recipient_list=[to_email],
+            fail_silently=False,
+        )
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
+
+# class ManagerRequiredMixin:
+#     """РўРѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ (role='manager')"""
+#
+#     def dispatch(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated or request.user.role != "manager":
+#             raise PermissionDenied("Р”РѕСЃС‚СѓРї С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ")
+#         return super().dispatch(request, *args, **kwargs)
+
+
+class UserAccessMixin:
+    """РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РјРѕР¶РµС‚ СЂР°Р±РѕС‚Р°С‚СЊ С‚РѕР»СЊРєРѕ СЃРѕ СЃРІРѕРёРјРё РѕР±СЉРµРєС‚Р°РјРё"""
+
+    def get_object(self, queryset=None):
+        # РЇРІРЅРѕ РїРѕР»СѓС‡Р°РµРј РѕР±СЉРµРєС‚
+        obj = super().get_object(queryset) if queryset else super().get_object()
+        return obj
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not request.user.is_authenticated or (obj.owner != request.user and request.user.role != "manager"):
+            raise PermissionDenied("РќРµС‚ РґРѕСЃС‚СѓРїР° Рє СЌС‚РѕРјСѓ РѕР±СЉРµРєС‚Сѓ")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """РњРёРєСЃРёРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ Рё Р°РґРјРёРЅРѕРІ"""
+
+    def test_func(self):
+        return self.request.user.role == "manager" or self.request.user.is_staff
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from phonenumber_field.modelfields import PhoneNumberField
 
 
-class Course(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="РќР°Р·РІР°РЅРёРµ РєСѓСЂСЃР°")
-    description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ РєСѓСЂСЃР°")
-    preview = models.ImageField(
-        upload_to="courses/previews",
+class User(AbstractUser):
+    username = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
+        help_text="Р’РІРµРґРёС‚Рµ РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
+    )
+    email = models.EmailField(
+        unique=True,
+        blank=False,
+        null=False,
+        verbose_name="email",
+        help_text="Р’РІРµРґРёС‚Рµ Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹",
+    )
+    country = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="РЎС‚СЂР°РЅР°",
+        help_text="Р’РІРµРґРёС‚Рµ СЃС‚СЂР°РЅСѓ",
+    )
+
+    city = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Р“РѕСЂРѕРґ",
+        help_text="Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ",
+    )
+
+    phone = PhoneNumberField(
+        blank=True,
+        null=True,
+        verbose_name="РўРµР»РµС„РѕРЅ",
+        help_text="Р’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ С‚РµР»РµС„РѕРЅР°",
+    )
+    avatar = models.ImageField(
+        upload_to="users/avatars",
         blank=True,
         null=True,
         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-        verbose_name="РџСЂРµРІСЊСЋС€РєР° РєСѓСЂСЃР°",
-        help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё РєСѓСЂСЃР°",
+        verbose_name="РђРІР°С‚Р°СЂ",
+        help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ Р°РІР°С‚Р°СЂР°",
     )
+    token = models.CharField(max_length=100, verbose_name="РўРѕРєРµРЅ", blank=True, null=True)
+    is_verified = models.BooleanField(default=False, verbose_name="РџРѕРґС‚РІРµСЂР¶РґРµРЅ")
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = [
+        "username",
+    ]
+
+    ROLES = (
+        ("user", "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"),
+        ("manager", "РњРµРЅРµРґР¶РµСЂ"),
+    )
+    role = models.CharField(max_length=10, choices=ROLES, default="user", verbose_name="Р РѕР»СЊ")
+    is_blocked = models.BooleanField(default=False, verbose_name="Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ")
 
     def __str__(self):
-        return self.name
+        return self.username
 
     class Meta:
-        verbose_name = "РљСѓСЂСЃ"
-        verbose_name_plural = "РљСѓСЂСЃС‹"
-        db_table = "Courses"
+        verbose_name = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"
+        verbose_name_plural = "РџРѕР»СЊР·РѕРІР°С‚РµР»Рё"
+        db_table = "users"
+        permissions = [
+            ("block_user", "РњРѕР¶РµС‚ Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"),
+            ("disable_mailing", "РњРѕР¶РµС‚ РѕС‚РєР»СЋС‡Р°С‚СЊ СЂР°СЃСЃС‹Р»РєРё"),
+        ]
+from rest_framework import permissions
 
 
-class Lesson(models.Model):
-    name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
-    description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
-    preview = models.ImageField(
-        upload_to="lessons/previews",
-        blank=True,
-        null=True,
-        validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-        verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
-        help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
-    )
-    video_link = models.URLField(max_length=500, blank=True, null=True)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
+class IsOwnerOrManager(permissions.BasePermission):
+    """
+    Р Р°Р·СЂРµС€РµРЅРёРµ: С‚РѕР»СЊРєРѕ РІР»Р°РґРµР»РµС† РёР»Рё РјРµРЅРµРґР¶РµСЂ РјРѕРіСѓС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РїСЂРѕС„РёР»СЊ
+    """
 
-    def __str__(self):
-        return self.name
+    def has_object_permission(self, request, view, obj):
+        # Р§С‚РµРЅРёРµ СЂР°Р·СЂРµС€РµРЅРѕ РІСЃРµРј Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
 
-    class Meta:
-        verbose_name = "РЈСЂРѕРє"
-        verbose_name_plural = "РЈСЂРѕРєРё"
-        db_table = "lessons"
+        # Р—Р°РїРёСЃСЊ СЂР°Р·СЂРµС€РµРЅР° С‚РѕР»СЊРєРѕ РІР»Р°РґРµР»СЊС†Сѓ РёР»Рё РјРµРЅРµРґР¶РµСЂСѓ
+        return obj == request.user or request.user.role == "manager"
 from rest_framework import serializers
 
-from .models import Course, Lesson
+from .models import User
 
 
-class CourseSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Course
-        fields = "__all__"
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "country",
+            "city",
+            "phone",
+            "avatar",
+            "role",
+            "is_blocked",
+        ]
+        read_only_fields = ["id", "email", "role", "is_blocked"]  # Р­С‚Рё РїРѕР»СЏ РЅРµР»СЊР·СЏ РјРµРЅСЏС‚СЊ
 
-
-class LessonSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Lesson
-        fields = "__all__"
-from django.test import TestCase
+    def validate_username(self, value):
+        """РџСЂРѕРІРµСЂРєР° СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚Рё username"""
+        if User.objects.filter(username=value).exclude(id=self.instance.id if self.instance else None).exists():
+            raise serializers.ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
+        return value
+# from django.test import TestCase
 
 # Create your tests here.
-from django.urls import path
-from rest_framework.routers import SimpleRouter
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.views import LoginView
+from django.urls import path, reverse_lazy
 
+from .forms import CustomPasswordResetForm
 from .views import (
-    CourseViewSet,
-    LessonCreateAPIView,
-    LessonDestroyAPIView,
-    LessonListAPIView,
-    LessonRetrieveAPIView,
-    LessonUpdateAPIView
+    CustomLogoutView,
+    UserListAPIView,
+    UserListHTMLView,
+    UserListView,
+    UserProfileRetrieveAPIView,
+    UserProfileUpdateAPIView,
+    UserProfileUpdateView,
+    UserRegisterView,
+    email_verification,
+    toggle_user_block
 )
 
-app_name = "lms"
-
-router = SimpleRouter()
-router.register(r"courses", CourseViewSet)
+app_name = "users"
 
 urlpatterns = [
-    path("lessons_list/", LessonListAPIView.as_view(), name="lessons_list"),
-    path("lesson/<int:pk>/", LessonRetrieveAPIView.as_view(), name="lesson"),
-    path("lesson/create/", LessonCreateAPIView.as_view(), name="lesson-create"),
-    path("lesson/<int:pk>/delete/", LessonDestroyAPIView.as_view(), name="lesson-delete"),
-    path("lesson/update/<int:pk>/update/", LessonUpdateAPIView.as_view(), name="lesson-update"),
-] + router.urls
-from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
-from rest_framework.viewsets import ModelViewSet
+    path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
+    path("logout/", CustomLogoutView.as_view(), name="logout"),
+    path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
+    path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
+    path("email-confirm/<str:token>/", email_verification, name="email_verification"),
+    path(
+        "password_reset/",
+        auth_views.PasswordResetView.as_view(
+            form_class=CustomPasswordResetForm,
+            template_name="users/password_reset.html",
+            email_template_name="users/password_reset_email.html",
+            subject_template_name="users/password_reset_subject.txt",
+            success_url=reverse_lazy("users:password_reset_done"),
+        ),
+        name="password_reset",
+    ),
+    path(
+        "password_reset/done/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="users/password_reset_done.html",
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="users/password_reset_confirm.html",
+            success_url=reverse_lazy("users:password_reset_complete"),
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="users/password_reset_complete.html",
+        ),
+        name="password_reset_complete",
+    ),
+    path("manager/users/", UserListView.as_view(), name="user_list"),
+    path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
+    path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
+    path("api/profile/", UserProfileRetrieveAPIView.as_view(), name="api_profile"),
+    path("api/profile/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update"),
+    path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
+    path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
+    path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
+]
+import secrets
 
-from .models import Course, Lesson
-from .serializer import CourseSerializer, LessonSerializer
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import LogoutView
+from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+
+from .forms import UserProfileForm, UserRegistrationForm
+from .mixins import ManagerRequiredMixin
+from .models import User
+from .permissions import IsOwnerOrManager
+from .serializers import UserProfileSerializer
 
 
-class CourseViewSet(ModelViewSet):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy("home")
 
 
-class LessonCreateAPIView(CreateAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+class UserRegisterView(CreateView):
+    model = User
+    form_class = UserRegistrationForm
+    template_name = "users/registration.html"
+    success_url = reverse_lazy("home")
+
+    def form_valid(self, form):
+
+        user = form.save()
+        user.is_active = False
+        token = secrets.token_hex(16)
+        user.token = token
+        user.save()
+        host = self.request.get_host()
+        url = f"http://{host}/users/email-confirm/{token}/"
+        send_mail(
+            subject="РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїРѕС‡С‚С‹",
+            message=f"""Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ {user.username}.
+РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРґС‚РІРµСЂРґРёС‚Рµ Р’Р°С€ Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹ РґР»СЏ Р·Р°РІРµСЂС€РµРЅРёСЏ СЂРµРіРёСЃС‚СЂР°С†РёРё.
+РґР»СЏ СЌС‚РѕРіРѕ РїРµСЂРµР№РґРёС‚Рµ РїРѕ СЃСЃС‹Р»РєРµ {url}""",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email],
+        )
+        response = super().form_valid(form)
+        login(self.request, user)
+        messages.success(self.request, "Р РµРіРёСЃС‚СЂР°С†РёСЏ РїСЂРѕС€Р»Р° СѓСЃРїРµС€РЅРѕ!")
+        return response
+
+    def form_invalid(self, form):
+        messages.error(self.request, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РёСЃРїСЂР°РІСЊС‚Рµ РѕС€РёР±РєРё РІ С„РѕСЂРјРµ")
+        return super().form_invalid(form)
 
 
-class LessonDestroyAPIView(DestroyAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = UserProfileForm
+    template_name = "users/profile_edit.html"
+    success_url = reverse_lazy("users:profile_edit")
+
+    def get_object(self, queryset=None):
+        return self.request.user  # Р РµРґР°РєС‚РёСЂСѓРµРј С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
 
 
-class LessonUpdateAPIView(UpdateAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+def email_verification(request, token):
+    user = get_object_or_404(User, token=token)
+    user.is_active = True
+    user.is_verified = True
+    user.token = None
+    user.save()
+
+    # РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р°РІС‚РѕСЂРёР·СѓРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+    login(request, user)
+
+    # Р”РѕР±Р°РІР»СЏРµРј СЃРѕРѕР±С‰РµРЅРёРµ РѕР± СѓСЃРїРµС…Рµ
+    messages.success(request, "Р’Р°С€ email СѓСЃРїРµС€РЅРѕ РїРѕРґС‚РІРµСЂР¶РґРµРЅ!")
+
+    # Р РµРґРёСЂРµРєС‚ РЅР° СЃС‚СЂР°РЅРёС†Сѓ РїСЂРѕС„РёР»СЏ
+    return redirect("users:profile_edit")
 
 
-class LessonRetrieveAPIView(RetrieveAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+# РЎРїРёСЃРѕРє РІСЃРµС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ (С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ)
+@method_decorator(cache_page(60 * 10), name="dispatch")
+class UserListView(ManagerRequiredMixin, ListView):
+    model = User
+    template_name = "users/user_list.html"
+    context_object_name = "users"
 
 
-class LessonListAPIView(ListAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+# Р‘Р»РѕРєРёСЂРѕРІРєР°/СЂР°Р·Р±Р»РѕРєРёСЂРѕРІРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+def toggle_user_block(request, user_id):
+    if request.user.role != "manager":
+        raise PermissionDenied
+
+    user = get_object_or_404(User, id=user_id)
+    user.is_blocked = not user.is_blocked
+    user.save()
+    messages.success(request, f"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ {user.email} {'Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ' if user.is_blocked else 'СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅ'}")
+    return redirect("users:user_list")
+
+
+class UserProfileUpdateAPIView(generics.UpdateAPIView):
+    """
+    Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РїСЂРѕС„РёР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+    Р”РѕСЃС‚СѓРї: С‚РѕР»СЊРєРѕ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РјРѕРіСѓС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ СЃРІРѕР№ РїСЂРѕС„РёР»СЊ
+    РњРµРЅРµРґР¶РµСЂС‹ РјРѕРіСѓС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ Р»СЋР±РѕР№ РїСЂРѕС„РёР»СЊ
+    """
+
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrManager]
+
+    def get_object(self):
+        user_id = self.kwargs.get("pk")
+        if user_id:
+            return generics.get_object_or_404(User, pk=user_id)
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+
+class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
+    """
+    Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РїСЂРѕС„РёР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+    """
+
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        user_id = self.kwargs.get("pk")
+        if user_id:
+            # РџСЂРѕСЃРјРѕС‚СЂ РґСЂСѓРіРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+            return generics.get_object_or_404(User, pk=user_id)
+        else:
+            # РџСЂРѕСЃРјРѕС‚СЂ СЃРІРѕРµРіРѕ РїСЂРѕС„РёР»СЏ
+            return self.request.user
+
+
+User = get_user_model()
+
+
+class UserListAPIView(generics.ListAPIView):
+    """
+    Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+    РўРѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ Рё Р°РґРјРёРЅРѕРІ
+    """
+
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІР°
+        if not (self.request.user.role == "manager" or self.request.user.is_staff):
+            raise permissions.PermissionDenied(
+                "РўРѕР»СЊРєРѕ РјРµРЅРµРґР¶РµСЂС‹ Рё Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂС‹ РјРѕРіСѓС‚ РїСЂРѕСЃРјР°С‚СЂРёРІР°С‚СЊ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
+            )
+
+        return User.objects.all().order_by("-date_joined")
+
+
+class UserListHTMLView(ManagerRequiredMixin, TemplateView):
+    """HTML СЃС‚СЂР°РЅРёС†Р° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"""
+
+    template_name = "users/user_list_api.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["users"] = User.objects.all().order_by("-date_joined")
+        return context
 import os
 
 from django.core.management import BaseCommand
@@ -608,434 +1229,3 @@ class Migration(migrations.Migration):
             ),
         ),
     ]
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.utils.translation import gettext_lazy as _
-
-from .models import User
-
-
-class UserAdmin(BaseUserAdmin):
-    list_display = ("id", "username", "email", "role", "is_blocked", "is_staff", "is_superuser")
-    list_filter = ("role", "is_blocked", "is_staff", "is_superuser")
-    search_fields = ("username", "email")
-    ordering = ("username",)
-
-    fieldsets = (
-        (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("email", "country", "phone", "avatar")}),
-        (
-            _("Permissions"),
-            {
-                "fields": (
-                    "is_active",
-                    "is_blocked",
-                    "is_staff",
-                    "is_superuser",
-                    "role",
-                    "groups",
-                    "user_permissions",
-                ),
-            },
-        ),
-        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
-    )
-
-    add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": ("username", "email", "password1", "password2", "role"),
-            },
-        ),
-    )
-
-    actions = ["block_users", "unblock_users", "make_managers", "make_regular_users"]
-
-    def block_users(self, request, queryset):
-        queryset.update(is_blocked=True)
-        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅС‹")
-
-    block_users.short_description = "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
-
-    def unblock_users(self, request, queryset):
-        queryset.update(is_blocked=False)
-        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅС‹")
-
-    unblock_users.short_description = "Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
-
-    def make_managers(self, request, queryset):
-        queryset.update(role="manager")
-        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СЃС‚Р°Р»Рё РјРµРЅРµРґР¶РµСЂР°РјРё")
-
-    make_managers.short_description = "РЎРґРµР»Р°С‚СЊ РјРµРЅРµРґР¶РµСЂР°РјРё"
-
-    def make_regular_users(self, request, queryset):
-        queryset.update(role="user")
-        self.message_user(request, "Р’С‹Р±СЂР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СЃС‚Р°Р»Рё РѕР±С‹С‡РЅС‹РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРјРё")
-
-    make_regular_users.short_description = "РЎРґРµР»Р°С‚СЊ РѕР±С‹С‡РЅС‹РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРјРё"
-
-
-admin.site.register(User, UserAdmin)
-from django.apps import AppConfig
-
-
-class UsersConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
-    name = "users"
-from django import forms
-from django.conf import settings
-from django.contrib.auth.forms import PasswordResetForm, UserCreationForm
-from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
-from django.template import loader
-
-from .models import User
-
-
-class UserRegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        if User.objects.filter(email=email).exists():
-            raise ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј email СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
-        return email
-
-    def clean_username(self):
-        username = self.cleaned_data["username"]
-        if User.objects.filter(username=username).exists():
-            raise ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚")
-        return username
-
-    class Meta:
-        model = User
-        fields = (
-            "username",
-            "email",
-            "country",
-            "phone",
-            "avatar",
-            "password1",
-            "password2",
-        )
-
-
-class UserProfileForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ("username", "email", "country", "phone", "avatar")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["username"].disabled = True  # РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅРµР»СЊР·СЏ РјРµРЅСЏС‚СЊ
-        self.fields["email"].disabled = True  # Email С‚РѕР¶Рµ РЅРµР»СЊР·СЏ РјРµРЅСЏС‚СЊ
-
-
-class CustomPasswordResetForm(PasswordResetForm):
-    def send_mail(
-        self, subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name=None
-    ):
-        """
-        РљР°СЃС‚РѕРјРЅР°СЏ РѕС‚РїСЂР°РІРєР° РїРёСЃСЊРјР° РґР»СЏ СЃР±СЂРѕСЃР° РїР°СЂРѕР»СЏ
-        """
-        subject = loader.render_to_string(subject_template_name, context)
-        # РЈР±РёСЂР°РµРј РїРµСЂРµРЅРѕСЃС‹ СЃС‚СЂРѕРє РІ subject
-        subject = "".join(subject.splitlines())
-        body = loader.render_to_string(email_template_name, context)
-
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=settings.EMAIL_HOST_USER,  # РСЃРїРѕР»СЊР·СѓРµРј email РёР· РЅР°СЃС‚СЂРѕРµРє
-            recipient_list=[to_email],
-            fail_silently=False,
-        )
-from django.core.exceptions import PermissionDenied
-
-
-class ManagerRequiredMixin:
-    """РўРѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ (role='manager')"""
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role != "manager":
-            raise PermissionDenied("Р”РѕСЃС‚СѓРї С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ")
-        return super().dispatch(request, *args, **kwargs)
-
-
-class UserAccessMixin:
-    """РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РјРѕР¶РµС‚ СЂР°Р±РѕС‚Р°С‚СЊ С‚РѕР»СЊРєРѕ СЃРѕ СЃРІРѕРёРјРё РѕР±СЉРµРєС‚Р°РјРё"""
-
-    def get_object(self, queryset=None):
-        # РЇРІРЅРѕ РїРѕР»СѓС‡Р°РµРј РѕР±СЉРµРєС‚
-        obj = super().get_object(queryset) if queryset else super().get_object()
-        return obj
-
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-        if not request.user.is_authenticated or (obj.owner != request.user and request.user.role != "manager"):
-            raise PermissionDenied("РќРµС‚ РґРѕСЃС‚СѓРїР° Рє СЌС‚РѕРјСѓ РѕР±СЉРµРєС‚Сѓ")
-        return super().dispatch(request, *args, **kwargs)
-from django.contrib.auth.models import AbstractUser
-from django.core.validators import FileExtensionValidator
-from django.db import models
-from phonenumber_field.modelfields import PhoneNumberField
-
-
-class User(AbstractUser):
-    username = models.CharField(
-        max_length=50,
-        unique=True,
-        verbose_name="РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
-        help_text="Р’РІРµРґРёС‚Рµ РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
-    )
-    email = models.EmailField(
-        unique=True,
-        blank=False,
-        null=False,
-        verbose_name="email",
-        help_text="Р’РІРµРґРёС‚Рµ Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹",
-    )
-    country = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name="РЎС‚СЂР°РЅР°",
-        help_text="Р’РІРµРґРёС‚Рµ СЃС‚СЂР°РЅСѓ",
-    )
-
-    city = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name="Р“РѕСЂРѕРґ",
-        help_text="Р’РІРµРґРёС‚Рµ РіРѕСЂРѕРґ",
-    )
-
-    phone = PhoneNumberField(
-        blank=True,
-        null=True,
-        verbose_name="РўРµР»РµС„РѕРЅ",
-        help_text="Р’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ С‚РµР»РµС„РѕРЅР°",
-    )
-    avatar = models.ImageField(
-        upload_to="users/avatars",
-        blank=True,
-        null=True,
-        validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-        verbose_name="РђРІР°С‚Р°СЂ",
-        help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ Р°РІР°С‚Р°СЂР°",
-    )
-    token = models.CharField(max_length=100, verbose_name="РўРѕРєРµРЅ", blank=True, null=True)
-    is_verified = models.BooleanField(default=False, verbose_name="РџРѕРґС‚РІРµСЂР¶РґРµРЅ")
-
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = [
-        "username",
-    ]
-
-    ROLES = (
-        ("user", "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"),
-        ("manager", "РњРµРЅРµРґР¶РµСЂ"),
-    )
-    role = models.CharField(max_length=10, choices=ROLES, default="user", verbose_name="Р РѕР»СЊ")
-    is_blocked = models.BooleanField(default=False, verbose_name="Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ")
-
-    def __str__(self):
-        return self.username
-
-    class Meta:
-        verbose_name = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"
-        verbose_name_plural = "РџРѕР»СЊР·РѕРІР°С‚РµР»Рё"
-        db_table = "users"
-        permissions = [
-            ("block_user", "РњРѕР¶РµС‚ Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"),
-            ("disable_mailing", "РњРѕР¶РµС‚ РѕС‚РєР»СЋС‡Р°С‚СЊ СЂР°СЃСЃС‹Р»РєРё"),
-        ]
-# from django.test import TestCase
-
-# Create your tests here.
-from django.contrib.auth import views as auth_views
-from django.contrib.auth.views import LoginView
-from django.urls import path, reverse_lazy
-
-from .forms import CustomPasswordResetForm
-from .views import (
-    CustomLogoutView,
-    UserListView,
-    UserProfileUpdateView,
-    UserRegisterView,
-    email_verification,
-    toggle_user_block
-)
-
-app_name = "users"
-
-urlpatterns = [
-    path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
-    path("logout/", CustomLogoutView.as_view(), name="logout"),
-    path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
-    path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
-    path("email-confirm/<str:token>/", email_verification, name="email_verification"),
-    path(
-        "password_reset/",
-        auth_views.PasswordResetView.as_view(
-            form_class=CustomPasswordResetForm,
-            template_name="users/password_reset.html",
-            email_template_name="users/password_reset_email.html",
-            subject_template_name="users/password_reset_subject.txt",
-            success_url=reverse_lazy("users:password_reset_done"),
-        ),
-        name="password_reset",
-    ),
-    path(
-        "password_reset/done/",
-        auth_views.PasswordResetDoneView.as_view(
-            template_name="users/password_reset_done.html",
-        ),
-        name="password_reset_done",
-    ),
-    path(
-        "reset/<uidb64>/<token>/",
-        auth_views.PasswordResetConfirmView.as_view(
-            template_name="users/password_reset_confirm.html",
-            success_url=reverse_lazy("users:password_reset_complete"),
-        ),
-        name="password_reset_confirm",
-    ),
-    path(
-        "reset/done/",
-        auth_views.PasswordResetCompleteView.as_view(
-            template_name="users/password_reset_complete.html",
-        ),
-        name="password_reset_complete",
-    ),
-    path("manager/users/", UserListView.as_view(), name="user_list"),
-    path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
-]
-import secrets
-
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.auth import login
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LogoutView
-from django.core.exceptions import PermissionDenied
-from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.views.generic import CreateView, ListView, UpdateView
-
-from .forms import UserProfileForm, UserRegistrationForm
-from .mixins import ManagerRequiredMixin
-from .models import User
-
-
-class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy("greeting")
-
-
-class UserRegisterView(CreateView):
-    model = User
-    form_class = UserRegistrationForm
-    template_name = "users/registration.html"
-    success_url = reverse_lazy("users:profile_edit")
-
-    def form_valid(self, form):
-
-        user = form.save()
-        user.is_active = False
-        token = secrets.token_hex(16)
-        user.token = token
-        user.save()
-        host = self.request.get_host()
-        url = f"http://{host}/users/email-confirm/{token}/"
-        send_mail(
-            subject="РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїРѕС‡С‚С‹",
-            message=f"""Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ {user.username}.
-РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРґС‚РІРµСЂРґРёС‚Рµ Р’Р°С€ Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹ РґР»СЏ Р·Р°РІРµСЂС€РµРЅРёСЏ СЂРµРіРёСЃС‚СЂР°С†РёРё.
-РґР»СЏ СЌС‚РѕРіРѕ РїРµСЂРµР№РґРёС‚Рµ РїРѕ СЃСЃС‹Р»РєРµ {url}""",
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[user.email],
-        )
-        response = super().form_valid(form)
-        login(self.request, user)
-        messages.success(self.request, "Р РµРіРёСЃС‚СЂР°С†РёСЏ РїСЂРѕС€Р»Р° СѓСЃРїРµС€РЅРѕ!")
-        return response
-
-    def form_invalid(self, form):
-        messages.error(self.request, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РёСЃРїСЂР°РІСЊС‚Рµ РѕС€РёР±РєРё РІ С„РѕСЂРјРµ")
-        return super().form_invalid(form)
-
-
-class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = User
-    form_class = UserProfileForm
-    template_name = "users/profile_edit.html"
-    success_url = reverse_lazy("users:profile_edit")
-
-    def get_object(self, queryset=None):
-        return self.request.user  # Р РµРґР°РєС‚РёСЂСѓРµРј С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-
-
-def email_verification(request, token):
-    user = get_object_or_404(User, token=token)
-    user.is_active = True
-    user.is_verified = True
-    user.token = None
-    user.save()
-
-    # РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р°РІС‚РѕСЂРёР·СѓРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-    login(request, user)
-
-    # Р”РѕР±Р°РІР»СЏРµРј СЃРѕРѕР±С‰РµРЅРёРµ РѕР± СѓСЃРїРµС…Рµ
-    messages.success(request, "Р’Р°С€ email СѓСЃРїРµС€РЅРѕ РїРѕРґС‚РІРµСЂР¶РґРµРЅ!")
-
-    # Р РµРґРёСЂРµРєС‚ РЅР° СЃС‚СЂР°РЅРёС†Сѓ РїСЂРѕС„РёР»СЏ
-    return redirect("users:profile_edit")
-
-
-# РЎРїРёСЃРѕРє РІСЃРµС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ (С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ)
-@method_decorator(cache_page(60 * 10), name="dispatch")
-class UserListView(ManagerRequiredMixin, ListView):
-    model = User
-    template_name = "users/user_list.html"
-    context_object_name = "users"
-
-
-# Р‘Р»РѕРєРёСЂРѕРІРєР°/СЂР°Р·Р±Р»РѕРєРёСЂРѕРІРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
-def toggle_user_block(request, user_id):
-    if request.user.role != "manager":
-        raise PermissionDenied
-
-    user = get_object_or_404(User, id=user_id)
-    user.is_blocked = not user.is_blocked
-    user.save()
-    messages.success(request, f"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ {user.email} {'Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ' if user.is_blocked else 'СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅ'}")
-    return redirect("users:user_list")
-#!/usr/bin/env python
-"""Django's command-line utility for administrative tasks."""
-import os
-import sys
-
-
-def main():
-    """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-    try:
-        from django.core.management import execute_from_command_line
-    except ImportError as exc:
-        raise ImportError(
-            "Couldn't import Django. Are you sure it's installed and "
-            "available on your PYTHONPATH environment variable? Did you "
-            "forget to activate a virtual environment?"
-        ) from exc
-    execute_from_command_line(sys.argv)
-
-
-if __name__ == "__main__":
-    main()
