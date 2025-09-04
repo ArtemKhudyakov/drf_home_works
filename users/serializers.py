@@ -34,6 +34,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "email", "role", "is_blocked"]
 
+
+
+
+
+class UserApiRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "email",
+            "password",
+            "first_name",
+            "last_name",
+            "country",
+            "city",
+            "phone",
+            "avatar",
+        ]
+
     def validate_username(self, value):
         """Проверка уникальности username"""
         if User.objects.filter(username=value).exclude(id=self.instance.id if self.instance else None).exists():

@@ -22,8 +22,9 @@ from .forms import UserProfileForm, UserRegistrationForm
 from .mixins import ManagerRequiredMixin
 from .models import Payment, User
 from .permissions import IsOwnerOrManager
-from .serializers import PaymentSerializer, UserProfileSerializer
+from .serializers import PaymentSerializer, UserProfileSerializer, UserApiRegistrationSerializer
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+
 
 
 class CustomLogoutView(LogoutView):
@@ -227,5 +228,11 @@ class PaymentDestroyAPIView(generics.DestroyAPIView):
 
 
 class UserCreateApiView(CreateAPIView):
-    serializer_class = UserProfileSerializer
+    serializer_class = UserApiRegistrationSerializer
     queryset = User.objects.all()
+
+    def perform_create(self, serializer):
+        user = serializer.save(is_active=True)
+        user.set_password(user.password)
+        user.save()
+
