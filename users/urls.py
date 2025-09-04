@@ -1,6 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LoginView
 from django.urls import path, reverse_lazy
+from rest_framework.permissions import AllowAny
 
 from .forms import CustomPasswordResetForm
 from .views import (
@@ -80,7 +81,7 @@ urlpatterns = [
     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
-    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/login/', TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(permission_classes=(AllowAny,)), name='token_refresh'),
     path('api/register/', UserCreateApiView.as_view(), name='user_api_register'),
 ]
