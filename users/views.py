@@ -230,6 +230,7 @@ class PaymentDestroyAPIView(generics.DestroyAPIView):
 class UserCreateApiView(CreateAPIView):
     serializer_class = UserApiRegistrationSerializer
     queryset = User.objects.all()
+    permission_classes = (permissions.AllowAny,)
 
     def perform_create(self, serializer):
         user = serializer.save(is_active=True)
