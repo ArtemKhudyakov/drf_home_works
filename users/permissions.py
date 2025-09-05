@@ -13,3 +13,9 @@ class IsOwnerOrManager(permissions.BasePermission):
 
         # Запись разрешена только владельцу или менеджеру
         return obj == request.user or request.user.role == "manager"
+
+
+class IsModerator(permissions.BasePermission):
+
+    def moderator_permissions(self, request, view):
+        return request.user.groups.filter(name="Moderator").exists
