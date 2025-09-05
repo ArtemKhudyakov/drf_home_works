@@ -146,69 +146,73 @@
  103:     "DEFAULT_AUTHENTICATION_CLASSES": [
  104:         "rest_framework_simplejwt.authentication.JWTAuthentication",
  105:         "rest_framework.authentication.SessionAuthentication",
- 106:     ],
- 107: }
- 108: 
- 109: # Internationalization
- 110: # https://docs.djangoproject.com/en/5.2/topics/i18n/
- 111: 
- 112: LANGUAGE_CODE = "en-us"
- 113: 
- 114: USE_I18N = True
+ 106:         'rest_framework.authentication.TokenAuthentication',
+ 107:     ],
+ 108:     "DEFAULT_PERMISSION_CLASSES": [
+ 109:         "rest_framework.permissions.IsAuthenticated",
+ 110:     ],
+ 111: }
+ 112: 
+ 113: # Internationalization
+ 114: # https://docs.djangoproject.com/en/5.2/topics/i18n/
  115: 
- 116: USE_TZ = True
+ 116: LANGUAGE_CODE = "en-us"
  117: 
- 118: TIME_ZONE = "Europe/Moscow"
+ 118: USE_I18N = True
  119: 
- 120: # Static files (CSS, JavaScript, Images)
- 121: # https://docs.djangoproject.com/en/5.2/howto/static-files/
- 122: 
- 123: STATIC_URL = "static/"
- 124: STATICFILES_DIRS = (BASE_DIR / "static",)
- 125: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
- 126: STATIC_ROOT = BASE_DIR / "staticfiles"
- 127: 
- 128: # Default primary key field type
- 129: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
- 130: 
- 131: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
- 132: 
- 133: MEDIA_URL = "media/"
+ 120: USE_TZ = True
+ 121: 
+ 122: TIME_ZONE = "Europe/Moscow"
+ 123: 
+ 124: # Static files (CSS, JavaScript, Images)
+ 125: # https://docs.djangoproject.com/en/5.2/howto/static-files/
+ 126: 
+ 127: STATIC_URL = "static/"
+ 128: STATICFILES_DIRS = (BASE_DIR / "static",)
+ 129: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+ 130: STATIC_ROOT = BASE_DIR / "staticfiles"
+ 131: 
+ 132: # Default primary key field type
+ 133: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
  134: 
- 135: MEDIA_ROOT = BASE_DIR / "media"
+ 135: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
  136: 
- 137: AUTH_USER_MODEL = "users.User"
+ 137: MEDIA_URL = "media/"
  138: 
- 139: LOGIN_REDIRECT_URL = "home"
- 140: LOGOUT_REDIRECT_URL = "home"
- 141: LOGIN_URL = "users:login"
+ 139: MEDIA_ROOT = BASE_DIR / "media"
+ 140: 
+ 141: AUTH_USER_MODEL = "users.User"
  142: 
- 143: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
- 144: EMAIL_HOST = "smtp.yandex.ru"
- 145: EMAIL_PORT = 465
- 146: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
- 147: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
- 148: EMAIL_USE_TLS = False
- 149: EMAIL_USE_SSL = True
- 150: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
- 151: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
- 152: 
- 153: CACHES = {
- 154:     "default": {
- 155:         "BACKEND": "django_redis.cache.RedisCache",
- 156:         "LOCATION": "redis://127.0.0.1:6379/2",
- 157:         "OPTIONS": {
- 158:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
- 159:         },
- 160:         "KEY_PREFIX": "mail_service_",
- 161:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
- 162:     }
- 163: }
- 164: 
- 165: SIMPLE_JWT = {
- 166:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
- 167:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
- 168: }
+ 143: LOGIN_REDIRECT_URL = "home"
+ 144: LOGOUT_REDIRECT_URL = "home"
+ 145: LOGIN_URL = "users:login"
+ 146: 
+ 147: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+ 148: EMAIL_HOST = "smtp.yandex.ru"
+ 149: EMAIL_PORT = 465
+ 150: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+ 151: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+ 152: EMAIL_USE_TLS = False
+ 153: EMAIL_USE_SSL = True
+ 154: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
+ 155: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
+ 156: 
+ 157: CACHES = {
+ 158:     "default": {
+ 159:         "BACKEND": "django_redis.cache.RedisCache",
+ 160:         "LOCATION": "redis://127.0.0.1:6379/2",
+ 161:         "OPTIONS": {
+ 162:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+ 163:         },
+ 164:         "KEY_PREFIX": "mail_service_",
+ 165:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
+ 166:     }
+ 167: }
+ 168: 
+ 169: SIMPLE_JWT = {
+ 170:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+ 171:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+ 172: }
 
 === G:\Python\drf_home_works\config\urls.py ===
    1: from django.conf import settings
@@ -276,49 +280,55 @@
    1: from django.core.validators import FileExtensionValidator
    2: from django.db import models
    3: 
-   4: 
-   5: class Course(models.Model):
-   6:     name = models.CharField(max_length=100, unique=True, verbose_name="РќР°Р·РІР°РЅРёРµ РєСѓСЂСЃР°")
-   7:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ РєСѓСЂСЃР°")
-   8:     preview = models.ImageField(
-   9:         upload_to="courses/previews",
-  10:         blank=True,
-  11:         null=True,
-  12:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-  13:         verbose_name="РџСЂРµРІСЊСЋС€РєР° РєСѓСЂСЃР°",
-  14:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё РєСѓСЂСЃР°",
-  15:     )
-  16: 
-  17:     def __str__(self):
-  18:         return self.name
-  19: 
-  20:     class Meta:
-  21:         verbose_name = "РљСѓСЂСЃ"
-  22:         verbose_name_plural = "РљСѓСЂСЃС‹"
-  23:         db_table = "Courses"
-  24: 
-  25: 
-  26: class Lesson(models.Model):
-  27:     name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
-  28:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
-  29:     preview = models.ImageField(
-  30:         upload_to="lessons/previews",
-  31:         blank=True,
-  32:         null=True,
-  33:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-  34:         verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
-  35:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
-  36:     )
-  37:     video_link = models.URLField(max_length=500, blank=True, null=True)
-  38:     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
-  39: 
-  40:     def __str__(self):
-  41:         return self.name
-  42: 
-  43:     class Meta:
-  44:         verbose_name = "РЈСЂРѕРє"
-  45:         verbose_name_plural = "РЈСЂРѕРєРё"
-  46:         db_table = "lessons"
+   4: from users.models import User
+   5: 
+   6: 
+   7: class Course(models.Model):
+   8:     name = models.CharField(max_length=100, unique=True, verbose_name="РќР°Р·РІР°РЅРёРµ РєСѓСЂСЃР°")
+   9:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ РєСѓСЂСЃР°")
+  10:     preview = models.ImageField(
+  11:         upload_to="courses/previews",
+  12:         blank=True,
+  13:         null=True,
+  14:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
+  15:         verbose_name="РџСЂРµРІСЊСЋС€РєР° РєСѓСЂСЃР°",
+  16:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё РєСѓСЂСЃР°",
+  17:     )
+  18:     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Р’Р»Р°РґРµР»РµС†",
+  19:                               help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° РєСѓСЂСЃР°" )
+  20: 
+  21:     def __str__(self):
+  22:         return self.name
+  23: 
+  24:     class Meta:
+  25:         verbose_name = "РљСѓСЂСЃ"
+  26:         verbose_name_plural = "РљСѓСЂСЃС‹"
+  27:         db_table = "Courses"
+  28: 
+  29: 
+  30: class Lesson(models.Model):
+  31:     name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
+  32:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
+  33:     preview = models.ImageField(
+  34:         upload_to="lessons/previews",
+  35:         blank=True,
+  36:         null=True,
+  37:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
+  38:         verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
+  39:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
+  40:     )
+  41:     video_link = models.URLField(max_length=500, blank=True, null=True)
+  42:     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
+  43:     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Р’Р»Р°РґРµР»РµС†",
+  44:                               help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° СѓСЂРѕРєР°")
+  45: 
+  46:     def __str__(self):
+  47:         return self.name
+  48: 
+  49:     class Meta:
+  50:         verbose_name = "РЈСЂРѕРє"
+  51:         verbose_name_plural = "РЈСЂРѕРєРё"
+  52:         db_table = "lessons"
 
 === G:\Python\drf_home_works\lms\serializer.py ===
    1: from rest_framework import serializers
@@ -993,89 +1003,90 @@
    1: from django.contrib.auth import views as auth_views
    2: from django.contrib.auth.views import LoginView
    3: from django.urls import path, reverse_lazy
-   4: 
-   5: from .forms import CustomPasswordResetForm
-   6: from .views import (
-   7:     CustomLogoutView,
-   8:     PaymentCreateAPIView,
-   9:     PaymentDestroyAPIView,
-  10:     PaymentListAPIView,
-  11:     PaymentRetrieveAPIView,
-  12:     PaymentUpdateAPIView,
-  13:     UserListAPIView,
-  14:     UserListHTMLView,
-  15:     UserListView,
-  16:     UserProfileRetrieveAPIView,
-  17:     UserProfileUpdateAPIView,
-  18:     UserProfileUpdateView,
-  19:     UserRegisterView,
-  20:     email_verification,
-  21:     toggle_user_block,
-  22:     UserCreateApiView
-  23: )
-  24: from rest_framework_simplejwt.views import (
-  25:     TokenObtainPairView,
-  26:     TokenRefreshView,
-  27: )
-  28: 
-  29: app_name = "users"
-  30: 
-  31: urlpatterns = [
-  32:     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
-  33:     path("logout/", CustomLogoutView.as_view(), name="logout"),
-  34:     path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
-  35:     path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
-  36:     path("email-confirm/<str:token>/", email_verification, name="email_verification"),
-  37:     path(
-  38:         "password_reset/",
-  39:         auth_views.PasswordResetView.as_view(
-  40:             form_class=CustomPasswordResetForm,
-  41:             template_name="users/password_reset.html",
-  42:             email_template_name="users/password_reset_email.html",
-  43:             subject_template_name="users/password_reset_subject.txt",
-  44:             success_url=reverse_lazy("users:password_reset_done"),
-  45:         ),
-  46:         name="password_reset",
-  47:     ),
-  48:     path(
-  49:         "password_reset/done/",
-  50:         auth_views.PasswordResetDoneView.as_view(
-  51:             template_name="users/password_reset_done.html",
-  52:         ),
-  53:         name="password_reset_done",
-  54:     ),
-  55:     path(
-  56:         "reset/<uidb64>/<token>/",
-  57:         auth_views.PasswordResetConfirmView.as_view(
-  58:             template_name="users/password_reset_confirm.html",
-  59:             success_url=reverse_lazy("users:password_reset_complete"),
-  60:         ),
-  61:         name="password_reset_confirm",
-  62:     ),
-  63:     path(
-  64:         "reset/done/",
-  65:         auth_views.PasswordResetCompleteView.as_view(
-  66:             template_name="users/password_reset_complete.html",
-  67:         ),
-  68:         name="password_reset_complete",
-  69:     ),
-  70:     path("manager/users/", UserListView.as_view(), name="user_list"),
-  71:     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
-  72:     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
-  73:     path("api/profile/", UserProfileRetrieveAPIView.as_view(), name="api_profile"),
-  74:     path("api/profile/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update"),
-  75:     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
-  76:     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
-  77:     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
-  78:     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
-  79:     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
-  80:     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
-  81:     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
-  82:     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
-  83:     path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-  84:     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-  85:     path('api/register/', UserCreateApiView.as_view(), name='user_api_register'),
-  86: ]
+   4: from rest_framework.permissions import AllowAny
+   5: 
+   6: from .forms import CustomPasswordResetForm
+   7: from .views import (
+   8:     CustomLogoutView,
+   9:     PaymentCreateAPIView,
+  10:     PaymentDestroyAPIView,
+  11:     PaymentListAPIView,
+  12:     PaymentRetrieveAPIView,
+  13:     PaymentUpdateAPIView,
+  14:     UserListAPIView,
+  15:     UserListHTMLView,
+  16:     UserListView,
+  17:     UserProfileRetrieveAPIView,
+  18:     UserProfileUpdateAPIView,
+  19:     UserProfileUpdateView,
+  20:     UserRegisterView,
+  21:     email_verification,
+  22:     toggle_user_block,
+  23:     UserCreateApiView
+  24: )
+  25: from rest_framework_simplejwt.views import (
+  26:     TokenObtainPairView,
+  27:     TokenRefreshView,
+  28: )
+  29: 
+  30: app_name = "users"
+  31: 
+  32: urlpatterns = [
+  33:     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
+  34:     path("logout/", CustomLogoutView.as_view(), name="logout"),
+  35:     path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
+  36:     path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
+  37:     path("email-confirm/<str:token>/", email_verification, name="email_verification"),
+  38:     path(
+  39:         "password_reset/",
+  40:         auth_views.PasswordResetView.as_view(
+  41:             form_class=CustomPasswordResetForm,
+  42:             template_name="users/password_reset.html",
+  43:             email_template_name="users/password_reset_email.html",
+  44:             subject_template_name="users/password_reset_subject.txt",
+  45:             success_url=reverse_lazy("users:password_reset_done"),
+  46:         ),
+  47:         name="password_reset",
+  48:     ),
+  49:     path(
+  50:         "password_reset/done/",
+  51:         auth_views.PasswordResetDoneView.as_view(
+  52:             template_name="users/password_reset_done.html",
+  53:         ),
+  54:         name="password_reset_done",
+  55:     ),
+  56:     path(
+  57:         "reset/<uidb64>/<token>/",
+  58:         auth_views.PasswordResetConfirmView.as_view(
+  59:             template_name="users/password_reset_confirm.html",
+  60:             success_url=reverse_lazy("users:password_reset_complete"),
+  61:         ),
+  62:         name="password_reset_confirm",
+  63:     ),
+  64:     path(
+  65:         "reset/done/",
+  66:         auth_views.PasswordResetCompleteView.as_view(
+  67:             template_name="users/password_reset_complete.html",
+  68:         ),
+  69:         name="password_reset_complete",
+  70:     ),
+  71:     path("manager/users/", UserListView.as_view(), name="user_list"),
+  72:     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
+  73:     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
+  74:     path("api/profile/", UserProfileRetrieveAPIView.as_view(), name="api_profile"),
+  75:     path("api/profile/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update"),
+  76:     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
+  77:     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
+  78:     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
+  79:     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
+  80:     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
+  81:     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
+  82:     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
+  83:     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
+  84:     path('api/login/', TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name='token_obtain_pair'),
+  85:     path('api/token/refresh/', TokenRefreshView.as_view(permission_classes=(AllowAny,)), name='token_refresh'),
+  86:     path('api/register/', UserCreateApiView.as_view(), name='user_api_register'),
+  87: ]
 
 === G:\Python\drf_home_works\users\views.py ===
    1: import secrets
@@ -1310,12 +1321,13 @@
  230: class UserCreateApiView(CreateAPIView):
  231:     serializer_class = UserApiRegistrationSerializer
  232:     queryset = User.objects.all()
- 233: 
- 234:     def perform_create(self, serializer):
- 235:         user = serializer.save(is_active=True)
- 236:         user.set_password(user.password)
- 237:         user.save()
- 238: 
+ 233:     permission_classes = (permissions.AllowAny,)
+ 234: 
+ 235:     def perform_create(self, serializer):
+ 236:         user = serializer.save(is_active=True)
+ 237:         user.set_password(user.password)
+ 238:         user.save()
+ 239: 
 
 === G:\Python\drf_home_works\users\__init__.py ===
 
