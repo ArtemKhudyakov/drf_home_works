@@ -10,6 +10,7 @@ class CanEditUserProfile(permissions.BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
+        """Настройка прав доступа для редактирования профиля"""
         # Владелец всегда может редактировать
         if obj == request.user:
             return True
@@ -29,6 +30,7 @@ class CanViewUserList(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
+        """Настройка прав доступа для просмотра списка пользователей"""
         is_manager = request.user.role == "manager"
         is_admin = request.user.is_staff
 
