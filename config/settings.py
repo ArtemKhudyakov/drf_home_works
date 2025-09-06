@@ -1,8 +1,8 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
-from datetime import timedelta
 
 load_dotenv(override=True)
 
@@ -28,10 +28,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_filters",
     "rest_framework",
-    'rest_framework_simplejwt',
+    "rest_framework_simplejwt",
     "users",
     "lms",
-
 ]
 
 MIDDLEWARE = [
@@ -103,7 +102,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        'rest_framework.authentication.TokenAuthentication',
+        "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -167,6 +166,6 @@ CACHES = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60*2),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }

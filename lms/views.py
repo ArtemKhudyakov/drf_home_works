@@ -1,11 +1,10 @@
+from rest_framework import permissions
 from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.viewsets import ModelViewSet
 
-from rest_framework import permissions
-
 from .models import Course, Lesson
+from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
 from .serializer import CourseSerializer, LessonSerializer
-from .permissions import CoursePermission, LessonCreatePermission, LessonUpdatePermission, LessonDeletePermission
 
 
 class CourseViewSet(ModelViewSet):

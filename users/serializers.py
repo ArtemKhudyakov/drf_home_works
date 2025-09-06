@@ -5,6 +5,7 @@ from .models import Payment, User
 
 class PaymentSerializer(serializers.ModelSerializer):
     """Сериализатор для просмотра платежей"""
+
     user = serializers.StringRelatedField(read_only=True)
     paid_course = serializers.StringRelatedField(read_only=True)
     paid_lesson = serializers.StringRelatedField(read_only=True)
@@ -19,27 +20,34 @@ class UserPublicProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
-            "id", "username", "email", "first_name",
-            "country", "city", "phone", "avatar", "role"
-        ]
+        fields = ["id", "username", "email", "first_name", "country", "city", "phone", "avatar", "role"]
         read_only_fields = ["id", "email", "role"]
 
 
 class UserPrivateProfileSerializer(serializers.ModelSerializer):
     """Сериализатор для приватного просмотра (все данные)"""
+
     payments = PaymentSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
         fields = [
-            "id", "username", "email", "first_name", "last_name",
-            "country", "city", "phone", "avatar", "role",
-            "is_blocked", "payments", "is_verified", "date_joined"
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "country",
+            "city",
+            "phone",
+            "avatar",
+            "role",
+            "is_blocked",
+            "payments",
+            "is_verified",
+            "date_joined",
         ]
         read_only_fields = ["id", "email", "role", "is_blocked", "is_verified", "date_joined"]
-
-
 
 
 class UserApiRegistrationSerializer(serializers.ModelSerializer):

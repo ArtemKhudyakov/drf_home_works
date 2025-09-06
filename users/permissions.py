@@ -15,7 +15,7 @@ class CanEditUserProfile(permissions.BasePermission):
             return True
 
         # Проверяем права менеджера/админа
-        user_role = getattr(request.user, 'role', None)
+        user_role = getattr(request.user, "role", None)
         is_manager = user_role == "manager"
         is_admin = request.user.is_staff
 

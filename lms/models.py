@@ -13,8 +13,14 @@ class Course(models.Model):
         verbose_name="Превьюшка курса",
         help_text="Загрузите изображение превьюшки курса",
     )
-    owner = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец",
-                              help_text="Укажите владельца курса" )
+    owner = models.ForeignKey(
+        "users.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Владелец",
+        help_text="Укажите владельца курса",
+    )
 
     def __str__(self):
         return self.name
@@ -38,8 +44,14 @@ class Lesson(models.Model):
     )
     video_link = models.URLField(max_length=500, blank=True, null=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="Курс")
-    owner = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец",
-                              help_text="Укажите владельца урока")
+    owner = models.ForeignKey(
+        "users.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Владелец",
+        help_text="Укажите владельца урока",
+    )
 
     def __str__(self):
         return self.name

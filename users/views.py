@@ -6,9 +6,6 @@ from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView
 from django.core.exceptions import PermissionDenied
-
-from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
-
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
@@ -17,6 +14,7 @@ from django.views.decorators.cache import cache_page
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
@@ -24,9 +22,13 @@ from .filters import PaymentFilter
 from .forms import UserProfileForm, UserRegistrationForm
 from .mixins import ManagerRequiredMixin
 from .models import Payment, User
-from .permissions import CanViewUserList, CanEditUserProfile
-from .serializers import PaymentSerializer, UserPublicProfileSerializer, UserPrivateProfileSerializer, UserApiRegistrationSerializer
-
+from .permissions import CanEditUserProfile, CanViewUserList
+from .serializers import (
+    PaymentSerializer,
+    UserApiRegistrationSerializer,
+    UserPrivateProfileSerializer,
+    UserPublicProfileSerializer
+)
 
 
 class CustomLogoutView(LogoutView):
@@ -133,23 +135,23 @@ class UserProfileUpdateAPIView(generics.UpdateAPIView):
             return user
         return self.request.user
 
-# class UserProfileUpdateAPIView(generics.UpdateAPIView):
-#     serializer_class = UserPrivateProfileSerializer
-#     permission_classes = [permissions.IsAuthenticated, CanEditUserProfile]
-#
-#     def get_object(self):
-#         user_id = self.kwargs.get("pk")
-#         if user_id:
-#             user = generics.get_object_or_404(User, pk=user_id)
-#
-#             # Дополнительная debug проверка для админа
-#             current_user = self.request.user
-#             if user != current_user and (current_user.is_staff or current_user.is_superuser):
-#                 print(f"🛠️ Admin override: {current_user} editing {user}")
-#
-#             self.check_object_permissions(self.request, user)
-#             return user
-#         return self.request.user
+    # class UserProfileUpdateAPIView(generics.UpdateAPIView):
+    #     serializer_class = UserPrivateProfileSerializer
+    #     permission_classes = [permissions.IsAuthenticated, CanEditUserProfile]
+    #
+    #     def get_object(self):
+    #         user_id = self.kwargs.get("pk")
+    #         if user_id:
+    #             user = generics.get_object_or_404(User, pk=user_id)
+    #
+    #             # Дополнительная debug проверка для админа
+    #             current_user = self.request.user
+    #             if user != current_user and (current_user.is_staff or current_user.is_superuser):
+    #                 print(f"🛠️ Admin override: {current_user} editing {user}")
+    #
+    #             self.check_object_permissions(self.request, user)
+    #             return user
+    #         return self.request.user
 
     def check_object_permissions(self, request, obj):
         """Вызываем проверку всех permission классов для объекта"""
@@ -157,6 +159,7 @@ class UserProfileUpdateAPIView(generics.UpdateAPIView):
         for permission in self.get_permissions():
             if not permission.has_object_permission(request, self, obj):
                 from rest_framework.exceptions import PermissionDenied
+
                 raise PermissionDenied("Недостаточно прав для редактирования этого профиля")
 
 
@@ -179,7 +182,7 @@ class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
             return UserPrivateProfileSerializer
 
         # Менеджер/Админ видит все данные любого пользователя
-        is_manager = getattr(current_user, 'role', None) == "manager"
+        is_manager = getattr(current_user, "role", None) == "manager"
         is_admin = current_user.is_staff
         if is_manager or is_admin:
             return UserPrivateProfileSerializer
@@ -209,9 +212,7 @@ class UserListAPIView(generics.ListAPIView):
     def get_queryset(self):
         # Проверяем права
         if not (self.request.user.role == "manager" or self.request.user.is_staff):
-            raise DRFPermissionDenied(
-                "Только менеджеры и администраторы могут просматривать список пользователей"
-            )
+            raise DRFPermissionDenied("Только менеджеры и администраторы могут просматривать список пользователей")
 
         return User.objects.all().order_by("-date_joined")
 
@@ -275,4 +276,3 @@ class UserCreateApiView(generics.CreateAPIView):
         user = serializer.save(is_active=True)
         user.set_password(user.password)
         user.save()
-
