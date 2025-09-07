@@ -58,10 +58,7 @@ class User(AbstractUser):
         "username",
     ]
 
-    ROLES = (
-        ("user", "Пользователь"),
-        ("manager", "Менеджер"),
-    )
+    ROLES = (("user", "Пользователь"), ("manager", "Менеджер"), ("moderator", "Модератор"))
     role = models.CharField(max_length=10, choices=ROLES, default="user", verbose_name="Роль")
     is_blocked = models.BooleanField(default=False, verbose_name="Заблокирован")
 

@@ -20,6 +20,7 @@ class UserAdmin(BaseUserAdmin):
                 "fields": (
                     "is_active",
                     "is_blocked",
+                    "is_verified",
                     "is_staff",
                     "is_superuser",
                     "role",

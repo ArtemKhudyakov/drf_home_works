@@ -1,15 +1,37 @@
 from rest_framework import permissions
 
 
-class IsOwnerOrManager(permissions.BasePermission):
+class CanEditUserProfile(permissions.BasePermission):
     """
-    Разрешение: только владелец или менеджер могут редактировать профиль
+    Разрешение для редактирования профиля:
+    - Владелец может редактировать свой профиль
+    - Менеджер может редактировать любой профиль
+    - Админ может редактировать любой профиль
     """
 
     def has_object_permission(self, request, view, obj):
-        # Чтение разрешено всем аутентифицированным
-        if request.method in permissions.SAFE_METHODS:
-            return request.user.is_authenticated
+        """Настройка прав доступа для редактирования профиля"""
+        # Владелец всегда может редактировать
+        if obj == request.user:
+            return True
 
-        # Запись разрешена только владельцу или менеджеру
-        return obj == request.user or request.user.role == "manager"
+        # Проверяем права менеджера/админа
+        user_role = getattr(request.user, "role", None)
+        is_manager = user_role == "manager"
+        is_admin = request.user.is_staff
+
+        return is_manager or is_admin
+
+
+class CanViewUserList(permissions.BasePermission):
+    """
+    Разрешение для просмотра списка пользователей:
+    - Только менеджеры и админы
+    """
+
+    def has_permission(self, request, view):
+        """Настройка прав доступа для просмотра списка пользователей"""
+        is_manager = request.user.role == "manager"
+        is_admin = request.user.is_staff
+
+        return is_manager or is_admin

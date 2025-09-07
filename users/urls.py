@@ -1,6 +1,8 @@
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LoginView
 from django.urls import path, reverse_lazy
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .forms import CustomPasswordResetForm
 from .views import (
@@ -10,6 +12,7 @@ from .views import (
     PaymentListAPIView,
     PaymentRetrieveAPIView,
     PaymentUpdateAPIView,
+    UserCreateApiView,
     UserListAPIView,
     UserListHTMLView,
     UserListView,
@@ -65,8 +68,8 @@ urlpatterns = [
     path("manager/users/", UserListView.as_view(), name="user_list"),
     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
-    path("api/profile/", UserProfileRetrieveAPIView.as_view(), name="api_profile"),
-    path("api/profile/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update"),
+    path("api/my-profile/", UserProfileRetrieveAPIView.as_view(), name="api_my_profile"),
+    path("api/my-profile/update/", UserProfileUpdateAPIView.as_view(), name="api_my_profile_update"),
     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
@@ -75,4 +78,7 @@ urlpatterns = [
     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
+    path("api/login/", TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(permission_classes=(AllowAny,)), name="token_refresh"),
+    path("api/register/", UserCreateApiView.as_view(), name="user_api_register"),
 ]

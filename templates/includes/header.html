@@ -12,10 +12,10 @@
                     <a class="nav-link" href="/">Главная</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/courses/">Курсы (API)</a>
+                    <a class="nav-link" href="{% url 'courses:course-list' %}">Курсы (API)</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/lessons/lessons_list/">Уроки (API)</a>
+                    <a class="nav-link" href="{% url 'lessons:lessons_list' %}">Уроки (API)</a>
                 </li>
 
                 <!-- Кнопки только для менеджеров и админов -->
