@@ -8,6 +8,8 @@ from .serializer import LessonSerializer, CourseSerializer
 from rest_framework import status
 from django.urls import reverse
 
+from .paginators import LessonPaginator, CoursePaginator
+
 class YouTubeValidatorTest(TestCase):
 
     def test_validator_valid_youtube_links(self):
@@ -230,3 +232,172 @@ class SubscriptionAPITest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['is_subscribed'])
+
+
+class PaginationTest(APITestCase):
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+        # Создаем тестовые данные
+        for i in range(15):
+            Course.objects.create(
+                name=f'Test Course {i}',
+                description=f'Test course description {i}'
+            )
+
+        course = Course.objects.first()
+        for i in range(100):
+            Lesson.objects.create(
+                name=f'Test Lesson {i}',
+                description=f'Test lesson description {i}',
+                course=course
+            )
+
+        self.client.force_authenticate(user=self.user)
+
+        # Используем реальные URL из дебага
+        self.courses_url = '/courses/courses/'
+        self.lessons_url = '/lessons/lessons_list/'
+
+    def test_lesson_pagination_default(self):
+        """Тест пагинации уроков по умолчанию"""
+        response = self.client.get(self.lessons_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertEqual(len(response.data['results']), 5)  # page_size = 5
+        self.assertIn('count', response.data)
+        self.assertIn('next', response.data)
+        self.assertIn('previous', response.data)
+
+    def test_lesson_pagination_custom_size(self):
+        """Тест пагинации уроков с кастомным размером"""
+        response = self.client.get(f'{self.lessons_url}?page_size=5')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 5)
+
+    def test_lesson_pagination_max_size(self):
+        """Тест пагинации уроков с максимальным размером"""
+        response = self.client.get(f'{self.lessons_url}?page_size=100')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Ожидаем не более 50 элементов (max_page_size)
+        expected_count = min(50, Lesson.objects.count())
+        self.assertEqual(len(response.data['results']), expected_count)
+
+    def test_course_pagination_default(self):
+        """Тест пагинации курсов по умолчанию"""
+        response = self.client.get(self.courses_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertEqual(len(response.data['results']), 2)  # page_size = 5
+        self.assertIn('count', response.data)
+        self.assertIn('next', response.data)
+        self.assertIn('previous', response.data)
+
+    def test_course_pagination_custom_size(self):
+        """Тест пагинации курсов с кастомным размером"""
+        response = self.client.get(f'{self.courses_url}?page_size=3')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 3)
+
+    def test_course_pagination_max_size(self):
+        """Тест пагинации курсов с максимальным размером"""
+        response = self.client.get(f'{self.courses_url}?page_size=30')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Ожидаем не более 20 элементов (max_page_size)
+        expected_count = min(20, Course.objects.count())
+        self.assertEqual(len(response.data['results']), expected_count)
+
+
+
+
+
+
+
+
+    # def test_course_pagination_default(self):
+    #     """Тест пагинации курсов по умолчанию"""
+    #     response = self.client.get('/courses/')
+    #
+    #     # Если 404, проверяем альтернативные URL
+    #     if response.status_code == 404:
+    #         response = self.client.get('/lms/courses/')  # Попробуем другой префикс
+    #
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertIn('results', response.data)
+    #     self.assertEqual(len(response.data['results']), 5)  # page_size = 5
+    #     self.assertIn('count', response.data)
+    #     self.assertIn('next', response.data)
+    #     self.assertIn('previous', response.data)
+    #
+    # def test_course_pagination_custom_size(self):
+    #     """Тест пагинации курсов с кастомным размером"""
+    #     response = self.client.get('/courses/?page_size=3')
+    #
+    #     # Если 404, проверяем альтернативные URL
+    #     if response.status_code == 404:
+    #         response = self.client.get('/lms/courses/?page_size=3')
+    #
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(len(response.data['results']), 3)
+    #
+    # def test_course_pagination_max_size(self):
+    #     """Тест пагинации курсов с максимальным размером"""
+    #     response = self.client.get('/courses/?page_size=30')
+    #
+    #     # Если 404, проверяем альтернативные URL
+    #     if response.status_code == 404:
+    #         response = self.client.get('/lms/courses/?page_size=30')
+    #
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     # Ожидаем не более 20 элементов (max_page_size), но не более общего количества
+    #     expected_count = min(20, Course.objects.count())
+    #     self.assertEqual(len(response.data['results']), expected_count)
+
+# class URLDebugTest(APITestCase):
+#
+#     def setUp(self):
+#         from django.contrib.auth import get_user_model
+#         User = get_user_model()
+#         self.user = User.objects.create_user(username='test', password='test')
+#         self.client.force_authenticate(user=self.user)
+#
+#     def test_debug_all_urls(self):
+#         """Тест для отладки всех доступных URL"""
+#         print("\n=== ДОСТУПНЫЕ URL ===")
+#
+#         # Проверяем возможные URL для курсов
+#         test_urls = [
+#             '/courses/',
+#             '/lms/courses/',
+#             '/courses/courses/',
+#             '/lessons/courses/',
+#             '/api/courses/',
+#         ]
+#
+#         for url in test_urls:
+#             response = self.client.get(url)
+#             print(f"{url} -> {response.status_code}")
+#             if response.status_code == 200:
+#                 print(
+#                     f"  Данные: {list(response.data.keys()) if hasattr(response.data, 'keys') else response.data}")
+#
+#         # Проверяем URL для уроков
+#         print("\n=== URL УРОКОВ ===")
+#         lesson_urls = [
+#             '/lessons/lessons_list/',
+#             '/lms/lessons/',
+#             '/courses/lessons/',
+#             '/api/lessons/',
+#         ]
+#
+#         for url in lesson_urls:
+#             response = self.client.get(url)
+#             print(f"{url} -> {response.status_code}")

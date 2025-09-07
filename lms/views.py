@@ -11,12 +11,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
+from .paginators import LessonPaginator, CoursePaginator
+
 
 class CourseViewSet(ModelViewSet):
-    queryset = Course.objects.all()
+    queryset = Course.objects.all().order_by('id')
     serializer_class = CourseSerializer
 
     permission_classes = [permissions.IsAuthenticated, CoursePermission]
+    pagination_class = CoursePaginator
 
     def get_serializer_context(self):
         """Передаем request в сериализатор для проверки подписки"""
@@ -26,7 +29,7 @@ class CourseViewSet(ModelViewSet):
 
     def get_queryset(self):
         """Все аутентифицированные пользователи видят все курсы"""
-        return Course.objects.all()
+        return Course.objects.all().order_by('id')
 
     def perform_create(self, serializer):
         """При создании курса назначаем владельца"""
@@ -65,12 +68,13 @@ class LessonRetrieveAPIView(RetrieveAPIView):
 
 
 class LessonListAPIView(ListAPIView):
-    queryset = Lesson.objects.all()
+    queryset = Lesson.objects.all().order_by('id')
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = LessonPaginator
 
     def get_queryset(self):
-        return Lesson.objects.all()
+        return Lesson.objects.all().order_by('id')
 
 
 class SubscriptionAPIView(APIView):
