@@ -22,10 +22,10 @@
 ФАЙЛ: D:\python\django\drf_home_works\config\settings.py
 ================================================================================
 0001: import os
-0002: from pathlib import Path
-0003: 
-0004: from dotenv import load_dotenv
-0005: from datetime import timedelta
+0002: from datetime import timedelta
+0003: from pathlib import Path
+0004: 
+0005: from dotenv import load_dotenv
 0006: 
 0007: load_dotenv(override=True)
 0008: 
@@ -51,148 +51,147 @@
 0028:     "django.contrib.staticfiles",
 0029:     "django_filters",
 0030:     "rest_framework",
-0031:     'rest_framework_simplejwt',
+0031:     "rest_framework_simplejwt",
 0032:     "users",
 0033:     "lms",
-0034: 
-0035: ]
-0036: 
-0037: MIDDLEWARE = [
-0038:     "django.middleware.security.SecurityMiddleware",
-0039:     "django.contrib.sessions.middleware.SessionMiddleware",
-0040:     "django.middleware.common.CommonMiddleware",
-0041:     "django.middleware.csrf.CsrfViewMiddleware",
-0042:     "django.contrib.auth.middleware.AuthenticationMiddleware",
-0043:     "django.contrib.messages.middleware.MessageMiddleware",
-0044:     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-0045: ]
-0046: 
-0047: ROOT_URLCONF = "config.urls"
-0048: 
-0049: TEMPLATES = [
-0050:     {
-0051:         "BACKEND": "django.template.backends.django.DjangoTemplates",
-0052:         "DIRS": [BASE_DIR / "templates"],
-0053:         "APP_DIRS": True,
-0054:         "OPTIONS": {
-0055:             "context_processors": [
-0056:                 "django.template.context_processors.request",
-0057:                 "django.contrib.auth.context_processors.auth",
-0058:                 "django.contrib.messages.context_processors.messages",
-0059:             ],
-0060:         },
-0061:     },
-0062: ]
-0063: 
-0064: WSGI_APPLICATION = "config.wsgi.application"
-0065: 
-0066: # Database
-0067: # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-0068: 
-0069: DATABASES = {
-0070:     "default": {
-0071:         "ENGINE": "django.db.backends.postgresql_psycopg2",
-0072:         "NAME": os.getenv("NAME"),
-0073:         "USER": os.getenv("USER"),
-0074:         "PASSWORD": os.getenv("DB_PASSWORD"),
-0075:         "HOST": os.getenv("HOST"),
-0076:         "PORT": os.getenv("PORT"),
-0077:     }
-0078: }
-0079: 
-0080: # Password validation
-0081: # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-0082: 
-0083: AUTH_PASSWORD_VALIDATORS = [
-0084:     {
-0085:         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-0086:     },
-0087:     {
-0088:         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-0089:     },
-0090:     {
-0091:         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-0092:     },
-0093:     {
-0094:         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-0095:     },
-0096: ]
-0097: 
-0098: REST_FRAMEWORK = {
-0099:     "DEFAULT_FILTER_BACKENDS": [
-0100:         "django_filters.rest_framework.DjangoFilterBackend",
-0101:         "rest_framework.filters.OrderingFilter",
-0102:     ],
-0103:     "DEFAULT_AUTHENTICATION_CLASSES": [
-0104:         "rest_framework_simplejwt.authentication.JWTAuthentication",
-0105:         "rest_framework.authentication.SessionAuthentication",
-0106:         'rest_framework.authentication.TokenAuthentication',
-0107:     ],
-0108:     "DEFAULT_PERMISSION_CLASSES": [
-0109:         "rest_framework.permissions.IsAuthenticated",
-0110:     ],
-0111: }
-0112: 
-0113: # Internationalization
-0114: # https://docs.djangoproject.com/en/5.2/topics/i18n/
-0115: 
-0116: LANGUAGE_CODE = "en-us"
-0117: 
-0118: USE_I18N = True
-0119: 
-0120: USE_TZ = True
-0121: 
-0122: TIME_ZONE = "Europe/Moscow"
-0123: 
-0124: # Static files (CSS, JavaScript, Images)
-0125: # https://docs.djangoproject.com/en/5.2/howto/static-files/
-0126: 
-0127: STATIC_URL = "static/"
-0128: STATICFILES_DIRS = (BASE_DIR / "static",)
-0129: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-0130: STATIC_ROOT = BASE_DIR / "staticfiles"
-0131: 
-0132: # Default primary key field type
-0133: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-0134: 
-0135: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-0136: 
-0137: MEDIA_URL = "media/"
-0138: 
-0139: MEDIA_ROOT = BASE_DIR / "media"
-0140: 
-0141: AUTH_USER_MODEL = "users.User"
-0142: 
-0143: LOGIN_REDIRECT_URL = "home"
-0144: LOGOUT_REDIRECT_URL = "home"
-0145: LOGIN_URL = "users:login"
-0146: 
-0147: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-0148: EMAIL_HOST = "smtp.yandex.ru"
-0149: EMAIL_PORT = 465
-0150: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-0151: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-0152: EMAIL_USE_TLS = False
-0153: EMAIL_USE_SSL = True
-0154: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
-0155: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
-0156: 
-0157: CACHES = {
-0158:     "default": {
-0159:         "BACKEND": "django_redis.cache.RedisCache",
-0160:         "LOCATION": "redis://127.0.0.1:6379/2",
-0161:         "OPTIONS": {
-0162:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-0163:         },
-0164:         "KEY_PREFIX": "mail_service_",
-0165:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
-0166:     }
-0167: }
-0168: 
-0169: SIMPLE_JWT = {
-0170:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60*2),
-0171:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-0172: }
+0034: ]
+0035: 
+0036: MIDDLEWARE = [
+0037:     "django.middleware.security.SecurityMiddleware",
+0038:     "django.contrib.sessions.middleware.SessionMiddleware",
+0039:     "django.middleware.common.CommonMiddleware",
+0040:     "django.middleware.csrf.CsrfViewMiddleware",
+0041:     "django.contrib.auth.middleware.AuthenticationMiddleware",
+0042:     "django.contrib.messages.middleware.MessageMiddleware",
+0043:     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+0044: ]
+0045: 
+0046: ROOT_URLCONF = "config.urls"
+0047: 
+0048: TEMPLATES = [
+0049:     {
+0050:         "BACKEND": "django.template.backends.django.DjangoTemplates",
+0051:         "DIRS": [BASE_DIR / "templates"],
+0052:         "APP_DIRS": True,
+0053:         "OPTIONS": {
+0054:             "context_processors": [
+0055:                 "django.template.context_processors.request",
+0056:                 "django.contrib.auth.context_processors.auth",
+0057:                 "django.contrib.messages.context_processors.messages",
+0058:             ],
+0059:         },
+0060:     },
+0061: ]
+0062: 
+0063: WSGI_APPLICATION = "config.wsgi.application"
+0064: 
+0065: # Database
+0066: # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+0067: 
+0068: DATABASES = {
+0069:     "default": {
+0070:         "ENGINE": "django.db.backends.postgresql_psycopg2",
+0071:         "NAME": os.getenv("NAME"),
+0072:         "USER": os.getenv("USER"),
+0073:         "PASSWORD": os.getenv("DB_PASSWORD"),
+0074:         "HOST": os.getenv("HOST"),
+0075:         "PORT": os.getenv("PORT"),
+0076:     }
+0077: }
+0078: 
+0079: # Password validation
+0080: # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+0081: 
+0082: AUTH_PASSWORD_VALIDATORS = [
+0083:     {
+0084:         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+0085:     },
+0086:     {
+0087:         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+0088:     },
+0089:     {
+0090:         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+0091:     },
+0092:     {
+0093:         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+0094:     },
+0095: ]
+0096: 
+0097: REST_FRAMEWORK = {
+0098:     "DEFAULT_FILTER_BACKENDS": [
+0099:         "django_filters.rest_framework.DjangoFilterBackend",
+0100:         "rest_framework.filters.OrderingFilter",
+0101:     ],
+0102:     "DEFAULT_AUTHENTICATION_CLASSES": [
+0103:         "rest_framework_simplejwt.authentication.JWTAuthentication",
+0104:         "rest_framework.authentication.SessionAuthentication",
+0105:         "rest_framework.authentication.TokenAuthentication",
+0106:     ],
+0107:     "DEFAULT_PERMISSION_CLASSES": [
+0108:         "rest_framework.permissions.IsAuthenticated",
+0109:     ],
+0110: }
+0111: 
+0112: # Internationalization
+0113: # https://docs.djangoproject.com/en/5.2/topics/i18n/
+0114: 
+0115: LANGUAGE_CODE = "en-us"
+0116: 
+0117: USE_I18N = True
+0118: 
+0119: USE_TZ = True
+0120: 
+0121: TIME_ZONE = "Europe/Moscow"
+0122: 
+0123: # Static files (CSS, JavaScript, Images)
+0124: # https://docs.djangoproject.com/en/5.2/howto/static-files/
+0125: 
+0126: STATIC_URL = "static/"
+0127: STATICFILES_DIRS = (BASE_DIR / "static",)
+0128: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+0129: STATIC_ROOT = BASE_DIR / "staticfiles"
+0130: 
+0131: # Default primary key field type
+0132: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+0133: 
+0134: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+0135: 
+0136: MEDIA_URL = "media/"
+0137: 
+0138: MEDIA_ROOT = BASE_DIR / "media"
+0139: 
+0140: AUTH_USER_MODEL = "users.User"
+0141: 
+0142: LOGIN_REDIRECT_URL = "home"
+0143: LOGOUT_REDIRECT_URL = "home"
+0144: LOGIN_URL = "users:login"
+0145: 
+0146: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+0147: EMAIL_HOST = "smtp.yandex.ru"
+0148: EMAIL_PORT = 465
+0149: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+0150: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+0151: EMAIL_USE_TLS = False
+0152: EMAIL_USE_SSL = True
+0153: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
+0154: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
+0155: 
+0156: CACHES = {
+0157:     "default": {
+0158:         "BACKEND": "django_redis.cache.RedisCache",
+0159:         "LOCATION": "redis://127.0.0.1:6379/2",
+0160:         "OPTIONS": {
+0161:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+0162:         },
+0163:         "KEY_PREFIX": "mail_service_",
+0164:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
+0165:     }
+0166: }
+0167: 
+0168: SIMPLE_JWT = {
+0169:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
+0170:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+0171: }
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\config\urls.py
@@ -472,41 +471,53 @@
 0013:         verbose_name="РџСЂРµРІСЊСЋС€РєР° РєСѓСЂСЃР°",
 0014:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё РєСѓСЂСЃР°",
 0015:     )
-0016:     owner = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Р’Р»Р°РґРµР»РµС†",
-0017:                               help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° РєСѓСЂСЃР°" )
-0018: 
-0019:     def __str__(self):
-0020:         return self.name
-0021: 
-0022:     class Meta:
-0023:         verbose_name = "РљСѓСЂСЃ"
-0024:         verbose_name_plural = "РљСѓСЂСЃС‹"
-0025:         db_table = "Courses"
-0026: 
+0016:     owner = models.ForeignKey(
+0017:         "users.User",
+0018:         on_delete=models.SET_NULL,
+0019:         null=True,
+0020:         blank=True,
+0021:         verbose_name="Р’Р»Р°РґРµР»РµС†",
+0022:         help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° РєСѓСЂСЃР°",
+0023:     )
+0024: 
+0025:     def __str__(self):
+0026:         return self.name
 0027: 
-0028: class Lesson(models.Model):
-0029:     name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
-0030:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
-0031:     preview = models.ImageField(
-0032:         upload_to="lessons/previews",
-0033:         blank=True,
-0034:         null=True,
-0035:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-0036:         verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
-0037:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
-0038:     )
-0039:     video_link = models.URLField(max_length=500, blank=True, null=True)
-0040:     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
-0041:     owner = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Р’Р»Р°РґРµР»РµС†",
-0042:                               help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° СѓСЂРѕРєР°")
-0043: 
-0044:     def __str__(self):
-0045:         return self.name
-0046: 
-0047:     class Meta:
-0048:         verbose_name = "РЈСЂРѕРє"
-0049:         verbose_name_plural = "РЈСЂРѕРєРё"
-0050:         db_table = "lessons"
+0028:     class Meta:
+0029:         verbose_name = "РљСѓСЂСЃ"
+0030:         verbose_name_plural = "РљСѓСЂСЃС‹"
+0031:         db_table = "Courses"
+0032: 
+0033: 
+0034: class Lesson(models.Model):
+0035:     name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
+0036:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
+0037:     preview = models.ImageField(
+0038:         upload_to="lessons/previews",
+0039:         blank=True,
+0040:         null=True,
+0041:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
+0042:         verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
+0043:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
+0044:     )
+0045:     video_link = models.URLField(max_length=500, blank=True, null=True)
+0046:     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
+0047:     owner = models.ForeignKey(
+0048:         "users.User",
+0049:         on_delete=models.SET_NULL,
+0050:         null=True,
+0051:         blank=True,
+0052:         verbose_name="Р’Р»Р°РґРµР»РµС†",
+0053:         help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° СѓСЂРѕРєР°",
+0054:     )
+0055: 
+0056:     def __str__(self):
+0057:         return self.name
+0058: 
+0059:     class Meta:
+0060:         verbose_name = "РЈСЂРѕРє"
+0061:         verbose_name_plural = "РЈСЂРѕРєРё"
+0062:         db_table = "lessons"
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\permissions.py
@@ -523,24 +534,24 @@
 0010:     """
 0011: 
 0012:     def has_permission(self, request, view):
-0013:         is_moderator = request.user.groups.filter(name='Moderators').exists()
+0013:         is_moderator = request.user.groups.filter(name="Moderators").exists()
 0014: 
-0015:         if view.action in ['create']:
+0015:         if view.action in ["create"]:
 0016:             return not is_moderator  # РЎРѕР·РґР°РІР°С‚СЊ РјРѕРіСѓС‚ РІСЃРµ, РєСЂРѕРјРµ РјРѕРґРµСЂР°С‚РѕСЂРѕРІ
 0017: 
 0018:         return True  # Р”Р»СЏ РѕСЃС‚Р°Р»СЊРЅС‹С… РґРµР№СЃС‚РІРёР№ РїСЂРѕРІРµСЂСЏРµРј РЅР° СѓСЂРѕРІРЅРµ РѕР±СЉРµРєС‚Р°
 0019: 
 0020:     def has_object_permission(self, request, view, obj):
-0021:         is_moderator = request.user.groups.filter(name='Moderators').exists()
+0021:         is_moderator = request.user.groups.filter(name="Moderators").exists()
 0022:         is_owner = obj.owner == request.user
 0023: 
-0024:         if view.action in ['retrieve', 'list']:
+0024:         if view.action in ["retrieve", "list"]:
 0025:             return True  # Р§РёС‚Р°С‚СЊ РјРѕРіСѓС‚ РІСЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ
 0026: 
-0027:         elif view.action in ['update', 'partial_update']:
+0027:         elif view.action in ["update", "partial_update"]:
 0028:             return is_owner or is_moderator  # Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РјРѕРіСѓС‚ РІР»Р°РґРµР»СЊС†С‹ Рё РјРѕРґРµСЂР°С‚РѕСЂС‹
 0029: 
-0030:         elif view.action == 'destroy':
+0030:         elif view.action == "destroy":
 0031:             return is_owner and not is_moderator  # РЈРґР°Р»СЏС‚СЊ РјРѕРіСѓС‚ С‚РѕР»СЊРєРѕ РІР»Р°РґРµР»СЊС†С‹ (РЅРµ РјРѕРґРµСЂР°С‚РѕСЂС‹)
 0032: 
 0033:         return False
@@ -548,23 +559,28 @@
 0035: 
 0036: class LessonCreatePermission(permissions.BasePermission):
 0037:     """Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРєРѕРІ"""
-0038:     def has_permission(self, request, view):
-0039:         is_moderator = request.user.groups.filter(name='Moderators').exists()
-0040:         return not is_moderator  # РЎРѕР·РґР°РІР°С‚СЊ РјРѕРіСѓС‚ РІСЃРµ, РєСЂРѕРјРµ РјРѕРґРµСЂР°С‚РѕСЂРѕРІ
-0041: 
-0042: class LessonUpdatePermission(permissions.BasePermission):
-0043:     """Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ СѓСЂРѕРєРѕРІ"""
-0044:     def has_object_permission(self, request, view, obj):
-0045:         is_moderator = request.user.groups.filter(name='Moderators').exists()
-0046:         is_owner = obj.owner == request.user
-0047:         return is_owner or is_moderator  # Р’Р»Р°РґРµР»СЊС†С‹ Рё РјРѕРґРµСЂР°С‚РѕСЂС‹
-0048: 
-0049: class LessonDeletePermission(permissions.BasePermission):
-0050:     """Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ СѓСЂРѕРєРѕРІ"""
-0051:     def has_object_permission(self, request, view, obj):
-0052:         is_moderator = request.user.groups.filter(name='Moderators').exists()
-0053:         is_owner = obj.owner == request.user
-0054:         return is_owner and not is_moderator  # РўРѕР»СЊРєРѕ РІР»Р°РґРµР»СЊС†С‹
+0038: 
+0039:     def has_permission(self, request, view):
+0040:         is_moderator = request.user.groups.filter(name="Moderators").exists()
+0041:         return not is_moderator  # РЎРѕР·РґР°РІР°С‚СЊ РјРѕРіСѓС‚ РІСЃРµ, РєСЂРѕРјРµ РјРѕРґРµСЂР°С‚РѕСЂРѕРІ
+0042: 
+0043: 
+0044: class LessonUpdatePermission(permissions.BasePermission):
+0045:     """Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ СѓСЂРѕРєРѕРІ"""
+0046: 
+0047:     def has_object_permission(self, request, view, obj):
+0048:         is_moderator = request.user.groups.filter(name="Moderators").exists()
+0049:         is_owner = obj.owner == request.user
+0050:         return is_owner or is_moderator  # Р’Р»Р°РґРµР»СЊС†С‹ Рё РјРѕРґРµСЂР°С‚РѕСЂС‹
+0051: 
+0052: 
+0053: class LessonDeletePermission(permissions.BasePermission):
+0054:     """Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ СѓСЂРѕРєРѕРІ"""
+0055: 
+0056:     def has_object_permission(self, request, view, obj):
+0057:         is_moderator = request.user.groups.filter(name="Moderators").exists()
+0058:         is_owner = obj.owner == request.user
+0059:         return is_owner and not is_moderator  # РўРѕР»СЊРєРѕ РІР»Р°РґРµР»СЊС†С‹
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\serializer.py
@@ -626,69 +642,68 @@
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\views.py
 ================================================================================
-0001: from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
-0002: from rest_framework.viewsets import ModelViewSet
-0003: 
-0004: from rest_framework import permissions
-0005: 
-0006: from .models import Course, Lesson
+0001: from rest_framework import permissions
+0002: from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+0003: from rest_framework.viewsets import ModelViewSet
+0004: 
+0005: from .models import Course, Lesson
+0006: from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
 0007: from .serializer import CourseSerializer, LessonSerializer
-0008: from .permissions import CoursePermission, LessonCreatePermission, LessonUpdatePermission, LessonDeletePermission
+0008: 
 0009: 
-0010: 
-0011: class CourseViewSet(ModelViewSet):
-0012:     queryset = Course.objects.all()
-0013:     serializer_class = CourseSerializer
-0014: 
-0015:     permission_classes = [permissions.IsAuthenticated, CoursePermission]
-0016: 
-0017:     def get_queryset(self):
-0018:         """Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РІРёРґСЏС‚ РІСЃРµ РєСѓСЂСЃС‹"""
-0019:         return Course.objects.all()
-0020: 
-0021:     def perform_create(self, serializer):
-0022:         """РџСЂРё СЃРѕР·РґР°РЅРёРё РєСѓСЂСЃР° РЅР°Р·РЅР°С‡Р°РµРј РІР»Р°РґРµР»СЊС†Р°"""
-0023:         course = serializer.save()
-0024:         course.owner = self.request.user
-0025:         course.save()
+0010: class CourseViewSet(ModelViewSet):
+0011:     queryset = Course.objects.all()
+0012:     serializer_class = CourseSerializer
+0013: 
+0014:     permission_classes = [permissions.IsAuthenticated, CoursePermission]
+0015: 
+0016:     def get_queryset(self):
+0017:         """Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РІРёРґСЏС‚ РІСЃРµ РєСѓСЂСЃС‹"""
+0018:         return Course.objects.all()
+0019: 
+0020:     def perform_create(self, serializer):
+0021:         """РџСЂРё СЃРѕР·РґР°РЅРёРё РєСѓСЂСЃР° РЅР°Р·РЅР°С‡Р°РµРј РІР»Р°РґРµР»СЊС†Р°"""
+0022:         course = serializer.save()
+0023:         course.owner = self.request.user
+0024:         course.save()
+0025: 
 0026: 
-0027: 
-0028: class LessonCreateAPIView(CreateAPIView):
-0029:     queryset = Lesson.objects.all()
-0030:     serializer_class = LessonSerializer
-0031:     permission_classes = [permissions.IsAuthenticated, LessonCreatePermission]
-0032: 
-0033:     def perform_create(self, serializer):
-0034:         lesson = serializer.save()
-0035:         lesson.owner = self.request.user
-0036:         lesson.save()
+0027: class LessonCreateAPIView(CreateAPIView):
+0028:     queryset = Lesson.objects.all()
+0029:     serializer_class = LessonSerializer
+0030:     permission_classes = [permissions.IsAuthenticated, LessonCreatePermission]
+0031: 
+0032:     def perform_create(self, serializer):
+0033:         lesson = serializer.save()
+0034:         lesson.owner = self.request.user
+0035:         lesson.save()
+0036: 
 0037: 
-0038: 
-0039: class LessonDestroyAPIView(DestroyAPIView):
-0040:     queryset = Lesson.objects.all()
-0041:     serializer_class = LessonSerializer
-0042:     permission_classes = [permissions.IsAuthenticated, LessonDeletePermission]
+0038: class LessonDestroyAPIView(DestroyAPIView):
+0039:     queryset = Lesson.objects.all()
+0040:     serializer_class = LessonSerializer
+0041:     permission_classes = [permissions.IsAuthenticated, LessonDeletePermission]
+0042: 
 0043: 
-0044: 
-0045: class LessonUpdateAPIView(UpdateAPIView):
-0046:     queryset = Lesson.objects.all()
-0047:     serializer_class = LessonSerializer
-0048:     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
+0044: class LessonUpdateAPIView(UpdateAPIView):
+0045:     queryset = Lesson.objects.all()
+0046:     serializer_class = LessonSerializer
+0047:     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
+0048: 
 0049: 
-0050: 
-0051: class LessonRetrieveAPIView(RetrieveAPIView):
-0052:     queryset = Lesson.objects.all()
-0053:     serializer_class = LessonSerializer
-0054:     permission_classes = [permissions.IsAuthenticated]
+0050: class LessonRetrieveAPIView(RetrieveAPIView):
+0051:     queryset = Lesson.objects.all()
+0052:     serializer_class = LessonSerializer
+0053:     permission_classes = [permissions.IsAuthenticated]
+0054: 
 0055: 
-0056: 
-0057: class LessonListAPIView(ListAPIView):
-0058:     queryset = Lesson.objects.all()
-0059:     serializer_class = LessonSerializer
-0060:     permission_classes = [permissions.IsAuthenticated]
-0061: 
-0062:     def get_queryset(self):
-0063:         return Lesson.objects.all()
+0056: class LessonListAPIView(ListAPIView):
+0057:     queryset = Lesson.objects.all()
+0058:     serializer_class = LessonSerializer
+0059:     permission_classes = [permissions.IsAuthenticated]
+0060: 
+0061:     def get_queryset(self):
+0062:         return Lesson.objects.all()
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\__init__.py
@@ -697,63 +712,62 @@
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\management\commands\create_moderator.py
 ================================================================================
-0001: from django.core.management import BaseCommand
-0002: from django.contrib.auth import get_user_model
-0003: from django.contrib.auth.models import Group, Permission
-0004: from django.contrib.contenttypes.models import ContentType
-0005: from lms.models import Course, Lesson
-0006: 
+0001: from django.contrib.auth import get_user_model
+0002: from django.contrib.auth.models import Group, Permission
+0003: from django.contrib.contenttypes.models import ContentType
+0004: from django.core.management import BaseCommand
+0005: 
+0006: from lms.models import Course, Lesson
 0007: 
-0008: class Command(BaseCommand):
-0009:     help = 'Create a moderator user'
-0010: 
-0011:     def handle(self, *args, **options):
-0012:         User = get_user_model()
-0013: 
-0014:         moderators_group, created = Group.objects.get_or_create(name='Moderators')
-0015: 
-0016:         if created:
-0017:             course_content_type = ContentType.objects.get_for_model(Course)
-0018:             lesson_content_type = ContentType.objects.get_for_model(Lesson)
-0019: 
-0020:             content_permissions = Permission.objects.filter(
-0021:                 content_type__in=[course_content_type, lesson_content_type],
-0022:                 codename__in=['view_course', 'change_course', 'view_lesson', 'change_lesson']
-0023:             )
-0024:             moderators_group.permissions.set(content_permissions)
-0025: 
-0026:             self.stdout.write(
-0027:                 self.style.SUCCESS('Р“СЂСѓРїРїР° Moderators СЃРѕР·РґР°РЅР° СЃ РѕРіСЂР°РЅРёС‡РµРЅРЅС‹РјРё РїСЂР°РІР°РјРё')
-0028:             )
-0029: 
-0030:         # РЎРѕР·РґР°РµРј РјРѕРґРµСЂР°С‚РѕСЂР°
-0031:         moderator = User.objects.create(
-0032:             email='temp@mail.ru',
-0033:         )
-0034: 
-0035:         id = moderator.id
-0036:         moderator.username = f'moderator_{id}'
-0037:         moderator.email = f'{moderator.username}@mail.ru'
-0038:         moderator.role = "moderator"
-0039:         moderator.is_staff = True
-0040:         moderator.is_active = True
-0041:         moderator.set_password(f'{moderator.username}')
-0042:         moderator.is_verified = True
-0043:         moderator.save()
-0044: 
-0045:         moderator.groups.add(moderators_group)
-0046: 
-0047:         moderator.save()
-0048: 
-0049:         self.stdout.write(
-0050:             self.style.SUCCESS(
-0051:                 f'РњРѕРґРµСЂР°С‚РѕСЂ СЃРѕР·РґР°РЅ:\n'
-0052:                 f'Email: {moderator.email}\n'
-0053:                 f'Username: {moderator.username}\n'
-0054:                 f'Password: {moderator.username}\n'
-0055:                 f'Role: {moderator.role}'
-0056:             )
-0057:         )
+0008: 
+0009: class Command(BaseCommand):
+0010:     help = "Create a moderator user"
+0011: 
+0012:     def handle(self, *args, **options):
+0013:         User = get_user_model()
+0014: 
+0015:         moderators_group, created = Group.objects.get_or_create(name="Moderators")
+0016: 
+0017:         if created:
+0018:             course_content_type = ContentType.objects.get_for_model(Course)
+0019:             lesson_content_type = ContentType.objects.get_for_model(Lesson)
+0020: 
+0021:             content_permissions = Permission.objects.filter(
+0022:                 content_type__in=[course_content_type, lesson_content_type],
+0023:                 codename__in=["view_course", "change_course", "view_lesson", "change_lesson"],
+0024:             )
+0025:             moderators_group.permissions.set(content_permissions)
+0026: 
+0027:             self.stdout.write(self.style.SUCCESS("Р“СЂСѓРїРїР° Moderators СЃРѕР·РґР°РЅР° СЃ РѕРіСЂР°РЅРёС‡РµРЅРЅС‹РјРё РїСЂР°РІР°РјРё"))
+0028: 
+0029:         # РЎРѕР·РґР°РµРј РјРѕРґРµСЂР°С‚РѕСЂР°
+0030:         moderator = User.objects.create(
+0031:             email="temp@mail.ru",
+0032:         )
+0033: 
+0034:         id = moderator.id
+0035:         moderator.username = f"moderator_{id}"
+0036:         moderator.email = f"{moderator.username}@mail.ru"
+0037:         moderator.role = "moderator"
+0038:         moderator.is_staff = True
+0039:         moderator.is_active = True
+0040:         moderator.set_password(f"{moderator.username}")
+0041:         moderator.is_verified = True
+0042:         moderator.save()
+0043: 
+0044:         moderator.groups.add(moderators_group)
+0045: 
+0046:         moderator.save()
+0047: 
+0048:         self.stdout.write(
+0049:             self.style.SUCCESS(
+0050:                 f"РњРѕРґРµСЂР°С‚РѕСЂ СЃРѕР·РґР°РЅ:\n"
+0051:                 f"Email: {moderator.email}\n"
+0052:                 f"Username: {moderator.username}\n"
+0053:                 f"Password: {moderator.username}\n"
+0054:                 f"Role: {moderator.role}"
+0055:             )
+0056:         )
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\management\commands\create_superuser.py
@@ -1421,69 +1435,65 @@
 0058:         "username",
 0059:     ]
 0060: 
-0061:     ROLES = (
-0062:         ("user", "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"),
-0063:         ("manager", "РњРµРЅРµРґР¶РµСЂ"),
-0064:         ("moderator", "РњРѕРґРµСЂР°С‚РѕСЂ")
-0065:     )
-0066:     role = models.CharField(max_length=10, choices=ROLES, default="user", verbose_name="Р РѕР»СЊ")
-0067:     is_blocked = models.BooleanField(default=False, verbose_name="Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ")
-0068: 
-0069:     def __str__(self):
-0070:         return self.username
-0071: 
-0072:     class Meta:
-0073:         verbose_name = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"
-0074:         verbose_name_plural = "РџРѕР»СЊР·РѕРІР°С‚РµР»Рё"
-0075:         db_table = "users"
-0076:         permissions = [
-0077:             ("block_user", "РњРѕР¶РµС‚ Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"),
-0078:             ("disable_mailing", "РњРѕР¶РµС‚ РѕС‚РєР»СЋС‡Р°С‚СЊ СЂР°СЃСЃС‹Р»РєРё"),
-0079:         ]
-0080: 
-0081: 
-0082: class Payment(models.Model):
-0083:     PAYMENT_METHODS = [
-0084:         ("cash", "РќР°Р»РёС‡РЅС‹Рµ"),
-0085:         ("transfer", "РџРµСЂРµРІРѕРґ РЅР° СЃС‡РµС‚"),
-0086:     ]
-0087: 
-0088:     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ", related_name="payments")
-0089:     payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Р”Р°С‚Р° РѕРїР»Р°С‚С‹")
-0090:     paid_course = models.ForeignKey(
-0091:         Course,
-0092:         on_delete=models.CASCADE,
-0093:         verbose_name="РћРїР»Р°С‡РµРЅРЅС‹Р№ РєСѓСЂСЃ",
-0094:         null=True,
-0095:         blank=True,
-0096:         related_name="payments",
-0097:     )
-0098:     paid_lesson = models.ForeignKey(
-0099:         Lesson,
-0100:         on_delete=models.CASCADE,
-0101:         verbose_name="РћРїР»Р°С‡РµРЅРЅС‹Р№ СѓСЂРѕРє",
-0102:         null=True,
-0103:         blank=True,
-0104:         related_name="payments",
-0105:     )
-0106:     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="РЎСѓРјРјР° РѕРїР»Р°С‚С‹")
-0107:     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, verbose_name="РЎРїРѕСЃРѕР± РѕРїР»Р°С‚С‹")
-0108: 
-0109:     class Meta:
-0110:         verbose_name = "РџР»Р°С‚РµР¶"
-0111:         verbose_name_plural = "РџР»Р°С‚РµР¶Рё"
-0112:         ordering = ["-payment_date"]
-0113: 
-0114:     def __str__(self):
-0115:         return f"РџР»Р°С‚РµР¶ {self.user.username} - {self.amount} СЂСѓР±. ({self.get_payment_method_display()})"
-0116: 
-0117:     def clean(self):
-0118:         from django.core.exceptions import ValidationError
-0119: 
-0120:         if self.paid_course and self.paid_lesson:
-0121:             raise ValidationError("РњРѕР¶РЅРѕ РѕРїР»Р°С‚РёС‚СЊ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє, РЅРѕ РЅРµ РѕР±Р° РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ.")
-0122:         if not self.paid_course and not self.paid_lesson:
-0123:             raise ValidationError("Р”РѕР»Р¶РµРЅ Р±С‹С‚СЊ СѓРєР°Р·Р°РЅ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє.")
+0061:     ROLES = (("user", "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"), ("manager", "РњРµРЅРµРґР¶РµСЂ"), ("moderator", "РњРѕРґРµСЂР°С‚РѕСЂ"))
+0062:     role = models.CharField(max_length=10, choices=ROLES, default="user", verbose_name="Р РѕР»СЊ")
+0063:     is_blocked = models.BooleanField(default=False, verbose_name="Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ")
+0064: 
+0065:     def __str__(self):
+0066:         return self.username
+0067: 
+0068:     class Meta:
+0069:         verbose_name = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"
+0070:         verbose_name_plural = "РџРѕР»СЊР·РѕРІР°С‚РµР»Рё"
+0071:         db_table = "users"
+0072:         permissions = [
+0073:             ("block_user", "РњРѕР¶РµС‚ Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"),
+0074:             ("disable_mailing", "РњРѕР¶РµС‚ РѕС‚РєР»СЋС‡Р°С‚СЊ СЂР°СЃСЃС‹Р»РєРё"),
+0075:         ]
+0076: 
+0077: 
+0078: class Payment(models.Model):
+0079:     PAYMENT_METHODS = [
+0080:         ("cash", "РќР°Р»РёС‡РЅС‹Рµ"),
+0081:         ("transfer", "РџРµСЂРµРІРѕРґ РЅР° СЃС‡РµС‚"),
+0082:     ]
+0083: 
+0084:     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ", related_name="payments")
+0085:     payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Р”Р°С‚Р° РѕРїР»Р°С‚С‹")
+0086:     paid_course = models.ForeignKey(
+0087:         Course,
+0088:         on_delete=models.CASCADE,
+0089:         verbose_name="РћРїР»Р°С‡РµРЅРЅС‹Р№ РєСѓСЂСЃ",
+0090:         null=True,
+0091:         blank=True,
+0092:         related_name="payments",
+0093:     )
+0094:     paid_lesson = models.ForeignKey(
+0095:         Lesson,
+0096:         on_delete=models.CASCADE,
+0097:         verbose_name="РћРїР»Р°С‡РµРЅРЅС‹Р№ СѓСЂРѕРє",
+0098:         null=True,
+0099:         blank=True,
+0100:         related_name="payments",
+0101:     )
+0102:     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="РЎСѓРјРјР° РѕРїР»Р°С‚С‹")
+0103:     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, verbose_name="РЎРїРѕСЃРѕР± РѕРїР»Р°С‚С‹")
+0104: 
+0105:     class Meta:
+0106:         verbose_name = "РџР»Р°С‚РµР¶"
+0107:         verbose_name_plural = "РџР»Р°С‚РµР¶Рё"
+0108:         ordering = ["-payment_date"]
+0109: 
+0110:     def __str__(self):
+0111:         return f"РџР»Р°С‚РµР¶ {self.user.username} - {self.amount} СЂСѓР±. ({self.get_payment_method_display()})"
+0112: 
+0113:     def clean(self):
+0114:         from django.core.exceptions import ValidationError
+0115: 
+0116:         if self.paid_course and self.paid_lesson:
+0117:             raise ValidationError("РњРѕР¶РЅРѕ РѕРїР»Р°С‚РёС‚СЊ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє, РЅРѕ РЅРµ РѕР±Р° РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ.")
+0118:         if not self.paid_course and not self.paid_lesson:
+0119:             raise ValidationError("Р”РѕР»Р¶РµРЅ Р±С‹С‚СЊ СѓРєР°Р·Р°РЅ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє.")
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\permissions.py
@@ -1500,29 +1510,31 @@
 0010:     """
 0011: 
 0012:     def has_object_permission(self, request, view, obj):
-0013:         # Р’Р»Р°РґРµР»РµС† РІСЃРµРіРґР° РјРѕР¶РµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ
-0014:         if obj == request.user:
-0015:             return True
-0016: 
-0017:         # РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІР° РјРµРЅРµРґР¶РµСЂР°/Р°РґРјРёРЅР°
-0018:         user_role = getattr(request.user, 'role', None)
-0019:         is_manager = user_role == "manager"
-0020:         is_admin = request.user.is_staff
-0021: 
-0022:         return is_manager or is_admin
-0023: 
+0013:         """РќР°СЃС‚СЂРѕР№РєР° РїСЂР°РІ РґРѕСЃС‚СѓРїР° РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РїСЂРѕС„РёР»СЏ"""
+0014:         # Р’Р»Р°РґРµР»РµС† РІСЃРµРіРґР° РјРѕР¶РµС‚ СЂРµРґР°РєС‚РёСЂРѕРІР°С‚СЊ
+0015:         if obj == request.user:
+0016:             return True
+0017: 
+0018:         # РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІР° РјРµРЅРµРґР¶РµСЂР°/Р°РґРјРёРЅР°
+0019:         user_role = getattr(request.user, "role", None)
+0020:         is_manager = user_role == "manager"
+0021:         is_admin = request.user.is_staff
+0022: 
+0023:         return is_manager or is_admin
 0024: 
-0025: class CanViewUserList(permissions.BasePermission):
-0026:     """
-0027:     Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№:
-0028:     - РўРѕР»СЊРєРѕ РјРµРЅРµРґР¶РµСЂС‹ Рё Р°РґРјРёРЅС‹
-0029:     """
-0030: 
-0031:     def has_permission(self, request, view):
-0032:         is_manager = request.user.role == "manager"
-0033:         is_admin = request.user.is_staff
-0034: 
-0035:         return is_manager or is_admin
+0025: 
+0026: class CanViewUserList(permissions.BasePermission):
+0027:     """
+0028:     Р Р°Р·СЂРµС€РµРЅРёРµ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№:
+0029:     - РўРѕР»СЊРєРѕ РјРµРЅРµРґР¶РµСЂС‹ Рё Р°РґРјРёРЅС‹
+0030:     """
+0031: 
+0032:     def has_permission(self, request, view):
+0033:         """РќР°СЃС‚СЂРѕР№РєР° РїСЂР°РІ РґРѕСЃС‚СѓРїР° РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"""
+0034:         is_manager = request.user.role == "manager"
+0035:         is_admin = request.user.is_staff
+0036: 
+0037:         return is_manager or is_admin
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\serializers.py
@@ -1534,63 +1546,71 @@
 0005: 
 0006: class PaymentSerializer(serializers.ModelSerializer):
 0007:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РїР»Р°С‚РµР¶РµР№"""
-0008:     user = serializers.StringRelatedField(read_only=True)
-0009:     paid_course = serializers.StringRelatedField(read_only=True)
-0010:     paid_lesson = serializers.StringRelatedField(read_only=True)
-0011: 
-0012:     class Meta:
-0013:         model = Payment
-0014:         fields = ["id", "user", "payment_date", "paid_course", "paid_lesson", "amount", "payment_method"]
-0015: 
+0008: 
+0009:     user = serializers.StringRelatedField(read_only=True)
+0010:     paid_course = serializers.StringRelatedField(read_only=True)
+0011:     paid_lesson = serializers.StringRelatedField(read_only=True)
+0012: 
+0013:     class Meta:
+0014:         model = Payment
+0015:         fields = ["id", "user", "payment_date", "paid_course", "paid_lesson", "amount", "payment_method"]
 0016: 
-0017: class UserPublicProfileSerializer(serializers.ModelSerializer):
-0018:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСѓР±Р»РёС‡РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РѕРіСЂР°РЅРёС‡РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ)"""
-0019: 
-0020:     class Meta:
-0021:         model = User
-0022:         fields = [
-0023:             "id", "username", "email", "first_name",
-0024:             "country", "city", "phone", "avatar", "role"
-0025:         ]
-0026:         read_only_fields = ["id", "email", "role"]
-0027: 
-0028: 
-0029: class UserPrivateProfileSerializer(serializers.ModelSerializer):
-0030:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРёРІР°С‚РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РІСЃРµ РґР°РЅРЅС‹Рµ)"""
-0031:     payments = PaymentSerializer(many=True, read_only=True)
-0032: 
-0033:     class Meta:
-0034:         model = User
-0035:         fields = [
-0036:             "id", "username", "email", "first_name", "last_name",
-0037:             "country", "city", "phone", "avatar", "role",
-0038:             "is_blocked", "payments", "is_verified", "date_joined"
-0039:         ]
-0040:         read_only_fields = ["id", "email", "role", "is_blocked", "is_verified", "date_joined"]
-0041: 
-0042: 
-0043: 
-0044: 
-0045: class UserApiRegistrationSerializer(serializers.ModelSerializer):
-0046:     class Meta:
-0047:         model = User
-0048:         fields = [
-0049:             "username",
-0050:             "email",
-0051:             "password",
-0052:             "first_name",
-0053:             "last_name",
-0054:             "country",
-0055:             "city",
-0056:             "phone",
-0057:             "avatar",
-0058:         ]
-0059: 
-0060:     def validate_username(self, value):
-0061:         """РџСЂРѕРІРµСЂРєР° СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚Рё username"""
-0062:         if User.objects.filter(username=value).exclude(id=self.instance.id if self.instance else None).exists():
-0063:             raise serializers.ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
-0064:         return value
+0017: 
+0018: class UserPublicProfileSerializer(serializers.ModelSerializer):
+0019:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСѓР±Р»РёС‡РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РѕРіСЂР°РЅРёС‡РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ)"""
+0020: 
+0021:     class Meta:
+0022:         model = User
+0023:         fields = ["id", "username", "email", "first_name", "country", "city", "phone", "avatar", "role"]
+0024:         read_only_fields = ["id", "email", "role"]
+0025: 
+0026: 
+0027: class UserPrivateProfileSerializer(serializers.ModelSerializer):
+0028:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРёРІР°С‚РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РІСЃРµ РґР°РЅРЅС‹Рµ)"""
+0029: 
+0030:     payments = PaymentSerializer(many=True, read_only=True)
+0031: 
+0032:     class Meta:
+0033:         model = User
+0034:         fields = [
+0035:             "id",
+0036:             "username",
+0037:             "email",
+0038:             "first_name",
+0039:             "last_name",
+0040:             "country",
+0041:             "city",
+0042:             "phone",
+0043:             "avatar",
+0044:             "role",
+0045:             "is_blocked",
+0046:             "payments",
+0047:             "is_verified",
+0048:             "date_joined",
+0049:         ]
+0050:         read_only_fields = ["id", "email", "role", "is_blocked", "is_verified", "date_joined"]
+0051: 
+0052: 
+0053: class UserApiRegistrationSerializer(serializers.ModelSerializer):
+0054:     class Meta:
+0055:         model = User
+0056:         fields = [
+0057:             "username",
+0058:             "email",
+0059:             "password",
+0060:             "first_name",
+0061:             "last_name",
+0062:             "country",
+0063:             "city",
+0064:             "phone",
+0065:             "avatar",
+0066:         ]
+0067: 
+0068:     def validate_username(self, value):
+0069:         """РџСЂРѕРІРµСЂРєР° СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚Рё username"""
+0070:         if User.objects.filter(username=value).exclude(id=self.instance.id if self.instance else None).exists():
+0071:             raise serializers.ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
+0072:         return value
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\tests.py
@@ -1606,89 +1626,86 @@
 0002: from django.contrib.auth.views import LoginView
 0003: from django.urls import path, reverse_lazy
 0004: from rest_framework.permissions import AllowAny
-0005: 
-0006: from .forms import CustomPasswordResetForm
-0007: from .views import (
-0008:     CustomLogoutView,
-0009:     PaymentCreateAPIView,
-0010:     PaymentDestroyAPIView,
-0011:     PaymentListAPIView,
-0012:     PaymentRetrieveAPIView,
-0013:     PaymentUpdateAPIView,
-0014:     UserListAPIView,
-0015:     UserListHTMLView,
-0016:     UserListView,
-0017:     UserProfileRetrieveAPIView,
-0018:     UserProfileUpdateAPIView,
-0019:     UserProfileUpdateView,
-0020:     UserRegisterView,
-0021:     email_verification,
-0022:     toggle_user_block,
-0023:     UserCreateApiView
-0024: )
-0025: from rest_framework_simplejwt.views import (
-0026:     TokenObtainPairView,
-0027:     TokenRefreshView,
-0028: )
-0029: 
-0030: app_name = "users"
-0031: 
-0032: urlpatterns = [
-0033:     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
-0034:     path("logout/", CustomLogoutView.as_view(), name="logout"),
-0035:     path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
-0036:     path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
-0037:     path("email-confirm/<str:token>/", email_verification, name="email_verification"),
-0038:     path(
-0039:         "password_reset/",
-0040:         auth_views.PasswordResetView.as_view(
-0041:             form_class=CustomPasswordResetForm,
-0042:             template_name="users/password_reset.html",
-0043:             email_template_name="users/password_reset_email.html",
-0044:             subject_template_name="users/password_reset_subject.txt",
-0045:             success_url=reverse_lazy("users:password_reset_done"),
-0046:         ),
-0047:         name="password_reset",
-0048:     ),
-0049:     path(
-0050:         "password_reset/done/",
-0051:         auth_views.PasswordResetDoneView.as_view(
-0052:             template_name="users/password_reset_done.html",
-0053:         ),
-0054:         name="password_reset_done",
-0055:     ),
-0056:     path(
-0057:         "reset/<uidb64>/<token>/",
-0058:         auth_views.PasswordResetConfirmView.as_view(
-0059:             template_name="users/password_reset_confirm.html",
-0060:             success_url=reverse_lazy("users:password_reset_complete"),
-0061:         ),
-0062:         name="password_reset_confirm",
-0063:     ),
-0064:     path(
-0065:         "reset/done/",
-0066:         auth_views.PasswordResetCompleteView.as_view(
-0067:             template_name="users/password_reset_complete.html",
-0068:         ),
-0069:         name="password_reset_complete",
-0070:     ),
-0071:     path("manager/users/", UserListView.as_view(), name="user_list"),
-0072:     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
-0073:     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
-0074:     path("api/my-profile/", UserProfileRetrieveAPIView.as_view(), name="api_my_profile"),
-0075:     path("api/my-profile/update/", UserProfileUpdateAPIView.as_view(), name="api_my_profile_update"),
-0076:     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
-0077:     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
-0078:     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
-0079:     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
-0080:     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
-0081:     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
-0082:     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
-0083:     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
-0084:     path('api/login/', TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name='token_obtain_pair'),
-0085:     path('api/token/refresh/', TokenRefreshView.as_view(permission_classes=(AllowAny,)), name='token_refresh'),
-0086:     path('api/register/', UserCreateApiView.as_view(), name='user_api_register'),
-0087: ]
+0005: from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+0006: 
+0007: from .forms import CustomPasswordResetForm
+0008: from .views import (
+0009:     CustomLogoutView,
+0010:     PaymentCreateAPIView,
+0011:     PaymentDestroyAPIView,
+0012:     PaymentListAPIView,
+0013:     PaymentRetrieveAPIView,
+0014:     PaymentUpdateAPIView,
+0015:     UserCreateApiView,
+0016:     UserListAPIView,
+0017:     UserListHTMLView,
+0018:     UserListView,
+0019:     UserProfileRetrieveAPIView,
+0020:     UserProfileUpdateAPIView,
+0021:     UserProfileUpdateView,
+0022:     UserRegisterView,
+0023:     email_verification,
+0024:     toggle_user_block
+0025: )
+0026: 
+0027: app_name = "users"
+0028: 
+0029: urlpatterns = [
+0030:     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
+0031:     path("logout/", CustomLogoutView.as_view(), name="logout"),
+0032:     path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
+0033:     path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
+0034:     path("email-confirm/<str:token>/", email_verification, name="email_verification"),
+0035:     path(
+0036:         "password_reset/",
+0037:         auth_views.PasswordResetView.as_view(
+0038:             form_class=CustomPasswordResetForm,
+0039:             template_name="users/password_reset.html",
+0040:             email_template_name="users/password_reset_email.html",
+0041:             subject_template_name="users/password_reset_subject.txt",
+0042:             success_url=reverse_lazy("users:password_reset_done"),
+0043:         ),
+0044:         name="password_reset",
+0045:     ),
+0046:     path(
+0047:         "password_reset/done/",
+0048:         auth_views.PasswordResetDoneView.as_view(
+0049:             template_name="users/password_reset_done.html",
+0050:         ),
+0051:         name="password_reset_done",
+0052:     ),
+0053:     path(
+0054:         "reset/<uidb64>/<token>/",
+0055:         auth_views.PasswordResetConfirmView.as_view(
+0056:             template_name="users/password_reset_confirm.html",
+0057:             success_url=reverse_lazy("users:password_reset_complete"),
+0058:         ),
+0059:         name="password_reset_confirm",
+0060:     ),
+0061:     path(
+0062:         "reset/done/",
+0063:         auth_views.PasswordResetCompleteView.as_view(
+0064:             template_name="users/password_reset_complete.html",
+0065:         ),
+0066:         name="password_reset_complete",
+0067:     ),
+0068:     path("manager/users/", UserListView.as_view(), name="user_list"),
+0069:     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
+0070:     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
+0071:     path("api/my-profile/", UserProfileRetrieveAPIView.as_view(), name="api_my_profile"),
+0072:     path("api/my-profile/update/", UserProfileUpdateAPIView.as_view(), name="api_my_profile_update"),
+0073:     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
+0074:     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
+0075:     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
+0076:     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
+0077:     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
+0078:     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
+0079:     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
+0080:     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
+0081:     path("api/login/", TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name="token_obtain_pair"),
+0082:     path("api/token/refresh/", TokenRefreshView.as_view(permission_classes=(AllowAny,)), name="token_refresh"),
+0083:     path("api/register/", UserCreateApiView.as_view(), name="user_api_register"),
+0084: ]
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\views.py
@@ -1701,276 +1718,276 @@
 0006: from django.contrib.auth.mixins import LoginRequiredMixin
 0007: from django.contrib.auth.views import LogoutView
 0008: from django.core.exceptions import PermissionDenied
-0009: 
-0010: from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
-0011: 
-0012: from django.core.mail import send_mail
-0013: from django.shortcuts import get_object_or_404, redirect
-0014: from django.urls import reverse_lazy
-0015: from django.utils.decorators import method_decorator
-0016: from django.views.decorators.cache import cache_page
-0017: from django.views.generic import CreateView, ListView, TemplateView, UpdateView
-0018: from django_filters.rest_framework import DjangoFilterBackend
-0019: from rest_framework import generics, permissions
-0020: from rest_framework.filters import OrderingFilter
-0021: from rest_framework.response import Response
-0022: 
-0023: from .filters import PaymentFilter
-0024: from .forms import UserProfileForm, UserRegistrationForm
-0025: from .mixins import ManagerRequiredMixin
-0026: from .models import Payment, User
-0027: from .permissions import CanViewUserList, CanEditUserProfile
-0028: from .serializers import PaymentSerializer, UserPublicProfileSerializer, UserPrivateProfileSerializer, UserApiRegistrationSerializer
-0029: 
-0030: 
-0031: 
-0032: class CustomLogoutView(LogoutView):
-0033:     next_page = reverse_lazy("home")
-0034: 
-0035: 
-0036: class UserRegisterView(CreateView):
-0037:     model = User
-0038:     form_class = UserRegistrationForm
-0039:     template_name = "users/registration.html"
-0040:     success_url = reverse_lazy("home")
-0041: 
-0042:     def form_valid(self, form):
+0009: from django.core.mail import send_mail
+0010: from django.shortcuts import get_object_or_404, redirect
+0011: from django.urls import reverse_lazy
+0012: from django.utils.decorators import method_decorator
+0013: from django.views.decorators.cache import cache_page
+0014: from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+0015: from django_filters.rest_framework import DjangoFilterBackend
+0016: from rest_framework import generics, permissions
+0017: from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+0018: from rest_framework.filters import OrderingFilter
+0019: from rest_framework.response import Response
+0020: 
+0021: from .filters import PaymentFilter
+0022: from .forms import UserProfileForm, UserRegistrationForm
+0023: from .mixins import ManagerRequiredMixin
+0024: from .models import Payment, User
+0025: from .permissions import CanEditUserProfile, CanViewUserList
+0026: from .serializers import (
+0027:     PaymentSerializer,
+0028:     UserApiRegistrationSerializer,
+0029:     UserPrivateProfileSerializer,
+0030:     UserPublicProfileSerializer
+0031: )
+0032: 
+0033: 
+0034: class CustomLogoutView(LogoutView):
+0035:     next_page = reverse_lazy("home")
+0036: 
+0037: 
+0038: class UserRegisterView(CreateView):
+0039:     model = User
+0040:     form_class = UserRegistrationForm
+0041:     template_name = "users/registration.html"
+0042:     success_url = reverse_lazy("home")
 0043: 
-0044:         user = form.save()
-0045:         user.is_active = False
-0046:         token = secrets.token_hex(16)
-0047:         user.token = token
-0048:         user.save()
-0049:         host = self.request.get_host()
-0050:         url = f"http://{host}/users/email-confirm/{token}/"
-0051:         send_mail(
-0052:             subject="РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїРѕС‡С‚С‹",
-0053:             message=f"""Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ {user.username}.
-0054: РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРґС‚РІРµСЂРґРёС‚Рµ Р’Р°С€ Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹ РґР»СЏ Р·Р°РІРµСЂС€РµРЅРёСЏ СЂРµРіРёСЃС‚СЂР°С†РёРё.
-0055: РґР»СЏ СЌС‚РѕРіРѕ РїРµСЂРµР№РґРёС‚Рµ РїРѕ СЃСЃС‹Р»РєРµ {url}""",
-0056:             from_email=settings.EMAIL_HOST_USER,
-0057:             recipient_list=[user.email],
-0058:         )
-0059:         response = super().form_valid(form)
-0060:         login(self.request, user)
-0061:         messages.success(self.request, "Р РµРіРёСЃС‚СЂР°С†РёСЏ РїСЂРѕС€Р»Р° СѓСЃРїРµС€РЅРѕ!")
-0062:         return response
-0063: 
-0064:     def form_invalid(self, form):
-0065:         messages.error(self.request, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РёСЃРїСЂР°РІСЊС‚Рµ РѕС€РёР±РєРё РІ С„РѕСЂРјРµ")
-0066:         return super().form_invalid(form)
-0067: 
-0068: 
-0069: class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
-0070:     model = User
-0071:     form_class = UserProfileForm
-0072:     template_name = "users/profile_edit.html"
-0073:     success_url = reverse_lazy("users:profile_edit")
-0074: 
-0075:     def get_object(self, queryset=None):
-0076:         return self.request.user  # Р РµРґР°РєС‚РёСЂСѓРµРј С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0077: 
-0078: 
-0079: def email_verification(request, token):
-0080:     user = get_object_or_404(User, token=token)
-0081:     user.is_active = True
-0082:     user.is_verified = True
-0083:     user.token = None
-0084:     user.save()
-0085: 
-0086:     # РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р°РІС‚РѕСЂРёР·СѓРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0087:     login(request, user)
-0088: 
-0089:     # Р”РѕР±Р°РІР»СЏРµРј СЃРѕРѕР±С‰РµРЅРёРµ РѕР± СѓСЃРїРµС…Рµ
-0090:     messages.success(request, "Р’Р°С€ email СѓСЃРїРµС€РЅРѕ РїРѕРґС‚РІРµСЂР¶РґРµРЅ!")
-0091: 
-0092:     # Р РµРґРёСЂРµРєС‚ РЅР° СЃС‚СЂР°РЅРёС†Сѓ РїСЂРѕС„РёР»СЏ
-0093:     return redirect("users:profile_edit")
-0094: 
-0095: 
-0096: # РЎРїРёСЃРѕРє РІСЃРµС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ (С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ)
-0097: @method_decorator(cache_page(60 * 10), name="dispatch")
-0098: class UserListView(ManagerRequiredMixin, ListView):
-0099:     model = User
-0100:     template_name = "users/user_list.html"
-0101:     context_object_name = "users"
-0102: 
-0103: 
-0104: # Р‘Р»РѕРєРёСЂРѕРІРєР°/СЂР°Р·Р±Р»РѕРєРёСЂРѕРІРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
-0105: def toggle_user_block(request, user_id):
-0106:     if request.user.role != "manager":
-0107:         raise PermissionDenied
-0108: 
-0109:     user = get_object_or_404(User, id=user_id)
-0110:     user.is_blocked = not user.is_blocked
-0111:     user.save()
-0112:     messages.success(request, f"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ {user.email} {'Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ' if user.is_blocked else 'СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅ'}")
-0113:     return redirect("users:user_list")
-0114: 
-0115: 
-0116: class UserProfileUpdateAPIView(generics.UpdateAPIView):
-0117:     """
-0118:     Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РїСЂРѕС„РёР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0119:     Р”РѕСЃС‚СѓРї: РІР»Р°РґРµР»РµС†, РјРµРЅРµРґР¶РµСЂ РёР»Рё Р°РґРјРёРЅ
-0120:     """
-0121: 
-0122:     serializer_class = UserPrivateProfileSerializer
-0123:     permission_classes = [permissions.IsAuthenticated, CanEditUserProfile]
-0124: 
-0125:     def get_object(self):
-0126:         """Р’С‹Р·С‹РІР°РµРј РїСЂРѕРІРµСЂРєСѓ РїСЂР°РІ РґР»СЏ РѕР±СЉРµРєС‚Р°"""
-0127:         user_id = self.kwargs.get("pk")
-0128:         if user_id:
-0129:             user = generics.get_object_or_404(User, pk=user_id)
-0130: 
-0131:             # РЇРІРЅРѕ РІС‹Р·С‹РІР°РµРј РїСЂРѕРІРµСЂРєСѓ РїСЂР°РІ РґР»СЏ РѕР±СЉРµРєС‚Р°
-0132:             self.check_object_permissions(self.request, user)
-0133:             return user
-0134:         return self.request.user
-0135: 
-0136: # class UserProfileUpdateAPIView(generics.UpdateAPIView):
-0137: #     serializer_class = UserPrivateProfileSerializer
-0138: #     permission_classes = [permissions.IsAuthenticated, CanEditUserProfile]
-0139: #
-0140: #     def get_object(self):
-0141: #         user_id = self.kwargs.get("pk")
-0142: #         if user_id:
-0143: #             user = generics.get_object_or_404(User, pk=user_id)
-0144: #
-0145: #             # Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ debug РїСЂРѕРІРµСЂРєР° РґР»СЏ Р°РґРјРёРЅР°
-0146: #             current_user = self.request.user
-0147: #             if user != current_user and (current_user.is_staff or current_user.is_superuser):
-0148: #                 print(f"рџ› пёЏ Admin override: {current_user} editing {user}")
-0149: #
-0150: #             self.check_object_permissions(self.request, user)
-0151: #             return user
-0152: #         return self.request.user
-0153: 
-0154:     def check_object_permissions(self, request, obj):
-0155:         """Р’С‹Р·С‹РІР°РµРј РїСЂРѕРІРµСЂРєСѓ РІСЃРµС… permission РєР»Р°СЃСЃРѕРІ РґР»СЏ РѕР±СЉРµРєС‚Р°"""
-0156: 
-0157:         for permission in self.get_permissions():
-0158:             if not permission.has_object_permission(request, self, obj):
-0159:                 from rest_framework.exceptions import PermissionDenied
-0160:                 raise PermissionDenied("РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РїСЂР°РІ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ СЌС‚РѕРіРѕ РїСЂРѕС„РёР»СЏ")
-0161: 
+0044:     def form_valid(self, form):
+0045: 
+0046:         user = form.save()
+0047:         user.is_active = False
+0048:         token = secrets.token_hex(16)
+0049:         user.token = token
+0050:         user.save()
+0051:         host = self.request.get_host()
+0052:         url = f"http://{host}/users/email-confirm/{token}/"
+0053:         send_mail(
+0054:             subject="РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїРѕС‡С‚С‹",
+0055:             message=f"""Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ {user.username}.
+0056: РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРґС‚РІРµСЂРґРёС‚Рµ Р’Р°С€ Р°РґСЂРµСЃ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹ РґР»СЏ Р·Р°РІРµСЂС€РµРЅРёСЏ СЂРµРіРёСЃС‚СЂР°С†РёРё.
+0057: РґР»СЏ СЌС‚РѕРіРѕ РїРµСЂРµР№РґРёС‚Рµ РїРѕ СЃСЃС‹Р»РєРµ {url}""",
+0058:             from_email=settings.EMAIL_HOST_USER,
+0059:             recipient_list=[user.email],
+0060:         )
+0061:         response = super().form_valid(form)
+0062:         login(self.request, user)
+0063:         messages.success(self.request, "Р РµРіРёСЃС‚СЂР°С†РёСЏ РїСЂРѕС€Р»Р° СѓСЃРїРµС€РЅРѕ!")
+0064:         return response
+0065: 
+0066:     def form_invalid(self, form):
+0067:         messages.error(self.request, "РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РёСЃРїСЂР°РІСЊС‚Рµ РѕС€РёР±РєРё РІ С„РѕСЂРјРµ")
+0068:         return super().form_invalid(form)
+0069: 
+0070: 
+0071: class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
+0072:     model = User
+0073:     form_class = UserProfileForm
+0074:     template_name = "users/profile_edit.html"
+0075:     success_url = reverse_lazy("users:profile_edit")
+0076: 
+0077:     def get_object(self, queryset=None):
+0078:         return self.request.user  # Р РµРґР°РєС‚РёСЂСѓРµРј С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0079: 
+0080: 
+0081: def email_verification(request, token):
+0082:     user = get_object_or_404(User, token=token)
+0083:     user.is_active = True
+0084:     user.is_verified = True
+0085:     user.token = None
+0086:     user.save()
+0087: 
+0088:     # РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р°РІС‚РѕСЂРёР·СѓРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0089:     login(request, user)
+0090: 
+0091:     # Р”РѕР±Р°РІР»СЏРµРј СЃРѕРѕР±С‰РµРЅРёРµ РѕР± СѓСЃРїРµС…Рµ
+0092:     messages.success(request, "Р’Р°С€ email СѓСЃРїРµС€РЅРѕ РїРѕРґС‚РІРµСЂР¶РґРµРЅ!")
+0093: 
+0094:     # Р РµРґРёСЂРµРєС‚ РЅР° СЃС‚СЂР°РЅРёС†Сѓ РїСЂРѕС„РёР»СЏ
+0095:     return redirect("users:profile_edit")
+0096: 
+0097: 
+0098: # РЎРїРёСЃРѕРє РІСЃРµС… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ (С‚РѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ)
+0099: @method_decorator(cache_page(60 * 10), name="dispatch")
+0100: class UserListView(ManagerRequiredMixin, ListView):
+0101:     model = User
+0102:     template_name = "users/user_list.html"
+0103:     context_object_name = "users"
+0104: 
+0105: 
+0106: # Р‘Р»РѕРєРёСЂРѕРІРєР°/СЂР°Р·Р±Р»РѕРєРёСЂРѕРІРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+0107: def toggle_user_block(request, user_id):
+0108:     if request.user.role != "manager":
+0109:         raise PermissionDenied
+0110: 
+0111:     user = get_object_or_404(User, id=user_id)
+0112:     user.is_blocked = not user.is_blocked
+0113:     user.save()
+0114:     messages.success(request, f"РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ {user.email} {'Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ' if user.is_blocked else 'СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅ'}")
+0115:     return redirect("users:user_list")
+0116: 
+0117: 
+0118: class UserProfileUpdateAPIView(generics.UpdateAPIView):
+0119:     """
+0120:     Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РїСЂРѕС„РёР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0121:     Р”РѕСЃС‚СѓРї: РІР»Р°РґРµР»РµС†, РјРµРЅРµРґР¶РµСЂ РёР»Рё Р°РґРјРёРЅ
+0122:     """
+0123: 
+0124:     serializer_class = UserPrivateProfileSerializer
+0125:     permission_classes = [permissions.IsAuthenticated, CanEditUserProfile]
+0126: 
+0127:     def get_object(self):
+0128:         """Р’С‹Р·С‹РІР°РµРј РїСЂРѕРІРµСЂРєСѓ РїСЂР°РІ РґР»СЏ РѕР±СЉРµРєС‚Р°"""
+0129:         user_id = self.kwargs.get("pk")
+0130:         if user_id:
+0131:             user = generics.get_object_or_404(User, pk=user_id)
+0132: 
+0133:             # РЇРІРЅРѕ РІС‹Р·С‹РІР°РµРј РїСЂРѕРІРµСЂРєСѓ РїСЂР°РІ РґР»СЏ РѕР±СЉРµРєС‚Р°
+0134:             self.check_object_permissions(self.request, user)
+0135:             return user
+0136:         return self.request.user
+0137: 
+0138:     # class UserProfileUpdateAPIView(generics.UpdateAPIView):
+0139:     #     serializer_class = UserPrivateProfileSerializer
+0140:     #     permission_classes = [permissions.IsAuthenticated, CanEditUserProfile]
+0141:     #
+0142:     #     def get_object(self):
+0143:     #         user_id = self.kwargs.get("pk")
+0144:     #         if user_id:
+0145:     #             user = generics.get_object_or_404(User, pk=user_id)
+0146:     #
+0147:     #             # Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ debug РїСЂРѕРІРµСЂРєР° РґР»СЏ Р°РґРјРёРЅР°
+0148:     #             current_user = self.request.user
+0149:     #             if user != current_user and (current_user.is_staff or current_user.is_superuser):
+0150:     #                 print(f"рџ› пёЏ Admin override: {current_user} editing {user}")
+0151:     #
+0152:     #             self.check_object_permissions(self.request, user)
+0153:     #             return user
+0154:     #         return self.request.user
+0155: 
+0156:     def check_object_permissions(self, request, obj):
+0157:         """Р’С‹Р·С‹РІР°РµРј РїСЂРѕРІРµСЂРєСѓ РІСЃРµС… permission РєР»Р°СЃСЃРѕРІ РґР»СЏ РѕР±СЉРµРєС‚Р°"""
+0158: 
+0159:         for permission in self.get_permissions():
+0160:             if not permission.has_object_permission(request, self, obj):
+0161:                 from rest_framework.exceptions import PermissionDenied
 0162: 
-0163: class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
-0164:     """
-0165:     Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РїСЂРѕС„РёР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0166:     - Р’Р»Р°РґРµР»РµС†: РІСЃРµ РґР°РЅРЅС‹Рµ
-0167:     - РњРµРЅРµРґР¶РµСЂ/РђРґРјРёРЅ: РІСЃРµ РґР°РЅРЅС‹Рµ Р»СЋР±РѕРіРѕ РїСЂРѕС„РёР»СЏ
-0168:     - РћР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ: С‚РѕР»СЊРєРѕ РїСѓР±Р»РёС‡РЅС‹Рµ РґР°РЅРЅС‹Рµ С‡СѓР¶РѕРіРѕ РїСЂРѕС„РёР»СЏ
-0169:     """
-0170: 
-0171:     permission_classes = [permissions.IsAuthenticated]
-0172: 
-0173:     def get_serializer_class(self):
-0174:         target_user = self.get_object()
-0175:         current_user = self.request.user
-0176: 
-0177:         # Р’Р»Р°РґРµР»РµС† РІРёРґРёС‚ РІСЃРµ СЃРІРѕРё РґР°РЅРЅС‹Рµ
-0178:         if target_user == current_user:
-0179:             return UserPrivateProfileSerializer
-0180: 
-0181:         # РњРµРЅРµРґР¶РµСЂ/РђРґРјРёРЅ РІРёРґРёС‚ РІСЃРµ РґР°РЅРЅС‹Рµ Р»СЋР±РѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0182:         is_manager = getattr(current_user, 'role', None) == "manager"
-0183:         is_admin = current_user.is_staff
-0184:         if is_manager or is_admin:
-0185:             return UserPrivateProfileSerializer
-0186: 
-0187:         # РћР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРёРґРёС‚ С‚РѕР»СЊРєРѕ РїСѓР±Р»РёС‡РЅС‹Рµ РґР°РЅРЅС‹Рµ С‡СѓР¶РѕРіРѕ РїСЂРѕС„РёР»СЏ
-0188:         return UserPublicProfileSerializer
+0163:                 raise PermissionDenied("РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РїСЂР°РІ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ СЌС‚РѕРіРѕ РїСЂРѕС„РёР»СЏ")
+0164: 
+0165: 
+0166: class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
+0167:     """
+0168:     Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РїСЂРѕС„РёР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0169:     - Р’Р»Р°РґРµР»РµС†: РІСЃРµ РґР°РЅРЅС‹Рµ
+0170:     - РњРµРЅРµРґР¶РµСЂ/РђРґРјРёРЅ: РІСЃРµ РґР°РЅРЅС‹Рµ Р»СЋР±РѕРіРѕ РїСЂРѕС„РёР»СЏ
+0171:     - РћР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ: С‚РѕР»СЊРєРѕ РїСѓР±Р»РёС‡РЅС‹Рµ РґР°РЅРЅС‹Рµ С‡СѓР¶РѕРіРѕ РїСЂРѕС„РёР»СЏ
+0172:     """
+0173: 
+0174:     permission_classes = [permissions.IsAuthenticated]
+0175: 
+0176:     def get_serializer_class(self):
+0177:         target_user = self.get_object()
+0178:         current_user = self.request.user
+0179: 
+0180:         # Р’Р»Р°РґРµР»РµС† РІРёРґРёС‚ РІСЃРµ СЃРІРѕРё РґР°РЅРЅС‹Рµ
+0181:         if target_user == current_user:
+0182:             return UserPrivateProfileSerializer
+0183: 
+0184:         # РњРµРЅРµРґР¶РµСЂ/РђРґРјРёРЅ РІРёРґРёС‚ РІСЃРµ РґР°РЅРЅС‹Рµ Р»СЋР±РѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0185:         is_manager = getattr(current_user, "role", None) == "manager"
+0186:         is_admin = current_user.is_staff
+0187:         if is_manager or is_admin:
+0188:             return UserPrivateProfileSerializer
 0189: 
-0190:     def get_object(self):
-0191:         user_id = self.kwargs.get("pk")
-0192:         if user_id:
-0193:             return generics.get_object_or_404(User, pk=user_id)
-0194:         return self.request.user
-0195: 
-0196: 
-0197: User = get_user_model()
+0190:         # РћР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРёРґРёС‚ С‚РѕР»СЊРєРѕ РїСѓР±Р»РёС‡РЅС‹Рµ РґР°РЅРЅС‹Рµ С‡СѓР¶РѕРіРѕ РїСЂРѕС„РёР»СЏ
+0191:         return UserPublicProfileSerializer
+0192: 
+0193:     def get_object(self):
+0194:         user_id = self.kwargs.get("pk")
+0195:         if user_id:
+0196:             return generics.get_object_or_404(User, pk=user_id)
+0197:         return self.request.user
 0198: 
 0199: 
-0200: class UserListAPIView(generics.ListAPIView):
-0201:     """
-0202:     Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
-0203:     РўРѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ Рё Р°РґРјРёРЅРѕРІ
+0200: User = get_user_model()
+0201: 
+0202: 
+0203: class UserListAPIView(generics.ListAPIView):
 0204:     """
-0205: 
-0206:     serializer_class = UserPrivateProfileSerializer
-0207:     permission_classes = [permissions.IsAuthenticated, CanViewUserList]
+0205:     Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+0206:     РўРѕР»СЊРєРѕ РґР»СЏ РјРµРЅРµРґР¶РµСЂРѕРІ Рё Р°РґРјРёРЅРѕРІ
+0207:     """
 0208: 
-0209:     def get_queryset(self):
-0210:         # РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІР°
-0211:         if not (self.request.user.role == "manager" or self.request.user.is_staff):
-0212:             raise DRFPermissionDenied(
-0213:                 "РўРѕР»СЊРєРѕ РјРµРЅРµРґР¶РµСЂС‹ Рё Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂС‹ РјРѕРіСѓС‚ РїСЂРѕСЃРјР°С‚СЂРёРІР°С‚СЊ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
-0214:             )
-0215: 
-0216:         return User.objects.all().order_by("-date_joined")
-0217: 
+0209:     serializer_class = UserPrivateProfileSerializer
+0210:     permission_classes = [permissions.IsAuthenticated, CanViewUserList]
+0211: 
+0212:     def get_queryset(self):
+0213:         # РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІР°
+0214:         if not (self.request.user.role == "manager" or self.request.user.is_staff):
+0215:             raise DRFPermissionDenied("РўРѕР»СЊРєРѕ РјРµРЅРµРґР¶РµСЂС‹ Рё Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂС‹ РјРѕРіСѓС‚ РїСЂРѕСЃРјР°С‚СЂРёРІР°С‚СЊ СЃРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№")
+0216: 
+0217:         return User.objects.all().order_by("-date_joined")
 0218: 
-0219: class UserListHTMLView(ManagerRequiredMixin, TemplateView):
-0220:     """HTML СЃС‚СЂР°РЅРёС†Р° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"""
-0221: 
-0222:     template_name = "users/user_list_api.html"
-0223: 
-0224:     def get_context_data(self, **kwargs):
-0225:         context = super().get_context_data(**kwargs)
-0226:         context["users"] = User.objects.all().order_by("-date_joined")
-0227:         return context
-0228: 
+0219: 
+0220: class UserListHTMLView(ManagerRequiredMixin, TemplateView):
+0221:     """HTML СЃС‚СЂР°РЅРёС†Р° СЃРїРёСЃРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"""
+0222: 
+0223:     template_name = "users/user_list_api.html"
+0224: 
+0225:     def get_context_data(self, **kwargs):
+0226:         context = super().get_context_data(**kwargs)
+0227:         context["users"] = User.objects.all().order_by("-date_joined")
+0228:         return context
 0229: 
-0230: class PaymentListAPIView(generics.ListAPIView):
-0231:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР»Р°С‚РµР¶РµР№ СЃ С„РёР»СЊС‚СЂР°С†РёРµР№"""
-0232: 
-0233:     queryset = Payment.objects.all()
-0234:     serializer_class = PaymentSerializer
-0235:     filter_backends = [DjangoFilterBackend, OrderingFilter]
-0236:     filterset_class = PaymentFilter
-0237:     ordering_fields = ["payment_date", "amount"]
-0238:     ordering = ["-payment_date"]  # СЃРѕСЂС‚РёСЂРѕРІРєР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
-0239: 
+0230: 
+0231: class PaymentListAPIView(generics.ListAPIView):
+0232:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР»Р°С‚РµР¶РµР№ СЃ С„РёР»СЊС‚СЂР°С†РёРµР№"""
+0233: 
+0234:     queryset = Payment.objects.all()
+0235:     serializer_class = PaymentSerializer
+0236:     filter_backends = [DjangoFilterBackend, OrderingFilter]
+0237:     filterset_class = PaymentFilter
+0238:     ordering_fields = ["payment_date", "amount"]
+0239:     ordering = ["-payment_date"]  # СЃРѕСЂС‚РёСЂРѕРІРєР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 0240: 
-0241: class PaymentRetrieveAPIView(generics.RetrieveAPIView):
-0242:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРµС‚Р°Р»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РїР»Р°С‚РµР¶Рµ"""
-0243: 
-0244:     queryset = Payment.objects.all()
-0245:     serializer_class = PaymentSerializer
-0246: 
+0241: 
+0242: class PaymentRetrieveAPIView(generics.RetrieveAPIView):
+0243:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРµС‚Р°Р»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РїР»Р°С‚РµР¶Рµ"""
+0244: 
+0245:     queryset = Payment.objects.all()
+0246:     serializer_class = PaymentSerializer
 0247: 
-0248: class PaymentCreateAPIView(generics.CreateAPIView):
-0249:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РЅРѕРІРѕРіРѕ РїР»Р°С‚РµР¶Р°"""
-0250: 
-0251:     queryset = Payment.objects.all()
-0252:     serializer_class = PaymentSerializer
-0253: 
+0248: 
+0249: class PaymentCreateAPIView(generics.CreateAPIView):
+0250:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РЅРѕРІРѕРіРѕ РїР»Р°С‚РµР¶Р°"""
+0251: 
+0252:     queryset = Payment.objects.all()
+0253:     serializer_class = PaymentSerializer
 0254: 
-0255: class PaymentUpdateAPIView(generics.UpdateAPIView):
-0256:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
-0257: 
-0258:     queryset = Payment.objects.all()
-0259:     serializer_class = PaymentSerializer
-0260: 
+0255: 
+0256: class PaymentUpdateAPIView(generics.UpdateAPIView):
+0257:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
+0258: 
+0259:     queryset = Payment.objects.all()
+0260:     serializer_class = PaymentSerializer
 0261: 
-0262: class PaymentDestroyAPIView(generics.DestroyAPIView):
-0263:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
-0264: 
-0265:     queryset = Payment.objects.all()
-0266:     serializer_class = PaymentSerializer
-0267: 
+0262: 
+0263: class PaymentDestroyAPIView(generics.DestroyAPIView):
+0264:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
+0265: 
+0266:     queryset = Payment.objects.all()
+0267:     serializer_class = PaymentSerializer
 0268: 
-0269: class UserCreateApiView(generics.CreateAPIView):
-0270:     serializer_class = UserApiRegistrationSerializer
-0271:     queryset = User.objects.all()
-0272:     permission_classes = (permissions.AllowAny,)
-0273: 
-0274:     def perform_create(self, serializer):
-0275:         user = serializer.save(is_active=True)
-0276:         user.set_password(user.password)
-0277:         user.save()
-0278: 
+0269: 
+0270: class UserCreateApiView(generics.CreateAPIView):
+0271:     serializer_class = UserApiRegistrationSerializer
+0272:     queryset = User.objects.all()
+0273:     permission_classes = (permissions.AllowAny,)
+0274: 
+0275:     def perform_create(self, serializer):
+0276:         user = serializer.save(is_active=True)
+0277:         user.set_password(user.password)
+0278:         user.save()
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\__init__.py
