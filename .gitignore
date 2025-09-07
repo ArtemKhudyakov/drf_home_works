@@ -37,7 +37,12 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
+# Coverage reports - include only summary files
+htmlcov/*
+!htmlcov/index.html
+!htmlcov/coverage.json
+!htmlcov/class_index.html
+!htmlcov/function_index.html
 .tox/
 .nox/
 .coverage
@@ -169,3 +174,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Coverage reports - include only summary files
+htmlcov/*
+!htmlcov/index.html
+!htmlcov/coverage.json
+!htmlcov/class_index.html
+!htmlcov/function_index.html
