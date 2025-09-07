@@ -1,10 +1,12 @@
 from django.test import TestCase
 from rest_framework import serializers
 from rest_framework.test import APITestCase
-from .models import Lesson, Course
+from .models import Lesson, Course, Subscription
 from .validators import YouTubeLinkValidator
 from .serializer import LessonSerializer, CourseSerializer
 
+from rest_framework import status
+from django.urls import reverse
 
 class YouTubeValidatorTest(TestCase):
 
@@ -154,3 +156,77 @@ class CourseSerializerTest(APITestCase):
 
         serializer = CourseSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
+class SubscriptionAPITest(APITestCase):
+
+    def setUp(self):
+        # Создаем пользователя и курс
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+        self.course = Course.objects.create(
+            name='Test Course',
+            description='Test course description'
+        )
+
+        self.client.force_authenticate(user=self.user)
+        self.subscription_url = reverse('lms:subscription')
+
+    def test_add_subscription(self):
+        """Тест добавления подписки"""
+        data = {'course_id': self.course.id}
+        response = self.client.post(self.subscription_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Подписка добавлена')
+        self.assertTrue(Subscription.objects.filter(user=self.user, course=self.course).exists())
+
+    def test_remove_subscription(self):
+        """Тест удаления подписки"""
+        # Сначала добавляем подписку
+        Subscription.objects.create(user=self.user, course=self.course)
+
+        data = {'course_id': self.course.id}
+        response = self.client.post(self.subscription_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Подписка удалена')
+        self.assertFalse(Subscription.objects.filter(user=self.user, course=self.course).exists())
+
+    def test_subscription_without_course_id(self):
+        """Тест без course_id"""
+        response = self.client.post(self.subscription_url, {})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_subscription_nonexistent_course(self):
+        """Тест с несуществующим курсом"""
+        data = {'course_id': 999}
+        response = self.client.post(self.subscription_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_is_subscribed_field_in_course(self):
+        """Тест поля is_subscribed в сериализаторе курса"""
+        # Запрос курса без подписки
+        url = reverse('courses:course-detail', args=[self.course.id])  # ← Исправлено!
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_subscribed'])
+
+        # Добавляем подписку
+        Subscription.objects.create(user=self.user, course=self.course)
+
+        # Снова запрашиваем курс
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_subscribed'])
