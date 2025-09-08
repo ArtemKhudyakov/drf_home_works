@@ -60,3 +60,31 @@ class Lesson(models.Model):
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
         db_table = "lessons"
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        related_name="subscriptions"
+    )
+    course = models.ForeignKey(
+        'Course',
+        on_delete=models.CASCADE,
+        verbose_name="Курс",
+        related_name="subscriptions"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата подписки"
+    )
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        unique_together = ['user', 'course']  # Одна подписка на пользователя и курс
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.name}"
