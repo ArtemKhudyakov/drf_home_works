@@ -52,7 +52,7 @@ def create_stripe_session(price_id, success_url=None, cancel_url=None):
 def convert_via_apilayer(amount_rub, target_currency="USD"):
     """Конвертация через APILayer"""
     try:
-        API_KEY = getattr(settings, "API_KEY_FOR_APILAYER", None)
+        API_KEY = (API_KEY_FOR_APILAYER, None)
         if not API_KEY:
             print("API_KEY_FOR_APILAYER не настроен")
             return None
