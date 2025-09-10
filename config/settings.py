@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "users",
     "lms",
     'django_extensions',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -170,3 +171,5 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
+
+STRIPE_API_KEY = os.getenv('STRIPE_API_KEY')
