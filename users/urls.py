@@ -21,7 +21,7 @@ from .views import (
     UserProfileUpdateView,
     UserRegisterView,
     email_verification,
-    toggle_user_block
+    toggle_user_block, PaymentStatusAPIView
 )
 
 app_name = "users"
@@ -76,8 +76,7 @@ urlpatterns = [
     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
-    path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
-    path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
+    path("payments/<int:pk>/status/", PaymentStatusAPIView.as_view(), name="payment-status"),
     path("api/login/", TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(permission_classes=(AllowAny,)), name="token_refresh"),
     path("api/register/", UserCreateApiView.as_view(), name="user_api_register"),

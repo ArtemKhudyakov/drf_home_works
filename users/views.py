@@ -13,7 +13,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
@@ -27,9 +27,8 @@ from .serializers import (
     PaymentSerializer,
     UserApiRegistrationSerializer,
     UserPrivateProfileSerializer,
-    UserPublicProfileSerializer
+    UserPublicProfileSerializer, PaymentCreateSerializer
 )
-from .services import convert_rub_into_usd, create_stripe_session, create_stripe_price
 
 
 class CustomLogoutView(LogoutView):
@@ -229,55 +228,6 @@ class UserListHTMLView(ManagerRequiredMixin, TemplateView):
         return context
 
 
-class PaymentListAPIView(generics.ListAPIView):
-    """Эндпоинт для получения списка платежей с фильтрацией"""
-
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_class = PaymentFilter
-    ordering_fields = ["payment_date", "amount"]
-    ordering = ["-payment_date"]  # сортировка по умолчанию
-
-
-class PaymentRetrieveAPIView(generics.RetrieveAPIView):
-    """Эндпоинт для получения детальной информации о платеже"""
-
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-
-
-class PaymentCreateAPIView(generics.CreateAPIView):
-    """Эндпоинт для создания нового платежа"""
-
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-
-    def perform_create(self, serializer):
-        payment = serializer.save(user=self.request.user)
-        user = self.request.user
-        amount_in_usd = convert_rub_into_usd(payment.amount)
-        price = create_stripe_price(amount_in_usd)
-        session_id, payment_link = create_stripe_session(price)
-        payment.session_id = session_id
-        payment.payment_link = payment_link
-        payment.save()
-
-
-class PaymentUpdateAPIView(generics.UpdateAPIView):
-    """Эндпоинт для обновления платежа"""
-
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-
-
-class PaymentDestroyAPIView(generics.DestroyAPIView):
-    """Эндпоинт для удаления платежа"""
-
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-
-
 class UserCreateApiView(generics.CreateAPIView):
     serializer_class = UserApiRegistrationSerializer
     queryset = User.objects.all()
@@ -287,3 +237,90 @@ class UserCreateApiView(generics.CreateAPIView):
         user = serializer.save(is_active=True)
         user.set_password(user.password)
         user.save()
+
+
+class PaymentListAPIView(generics.ListAPIView):
+    """Эндпоинт для получения списка платежей пользователя"""
+
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = PaymentFilter
+    ordering_fields = ["payment_date", "amount"]
+    ordering = ["-payment_date"]
+
+    def get_queryset(self):
+        return Payment.objects.filter(user=self.request.user)
+
+
+class PaymentRetrieveAPIView(generics.RetrieveAPIView):
+    """Эндпоинт для получения деталей платежа"""
+
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Payment.objects.filter(user=self.request.user)
+
+
+class PaymentStatusAPIView(generics.RetrieveAPIView):
+    """Эндпоинт для проверки статуса платежа"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def retrieve(self, request, *args, **kwargs):
+        from .services import get_payment_status
+
+        payment = self.get_object()
+        status = get_payment_status(payment.session_id)
+
+        return Response({
+            "payment_id": payment.id,
+            "status": status,
+            "paid": status == "paid"
+        })
+
+    def get_queryset(self):
+        return Payment.objects.filter(user=self.request.user)
+
+
+class PaymentCreateAPIView(generics.CreateAPIView):
+    """Эндпоинт для создания платежа через Stripe"""
+
+    queryset = Payment.objects.all()
+    serializer_class = PaymentCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+
+            # Возвращаем полный ответ со всеми полями
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def perform_create(self, serializer):
+        """Создает платеж с привязкой к пользователю"""
+        # User автоматически подставится через сериализатор
+        serializer.save()
+
+
+class PaymentUpdateAPIView(generics.UpdateAPIView):
+    """Эндпоинт для обновления платежа"""
+
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+class PaymentDestroyAPIView(generics.DestroyAPIView):
+    """Эндпоинт для удаления платежа"""
+
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer

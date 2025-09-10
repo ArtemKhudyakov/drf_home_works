@@ -173,3 +173,5 @@ SIMPLE_JWT = {
 }
 
 STRIPE_API_KEY = os.getenv('STRIPE_API_KEY')
+
+API_KEY_FOR_APILAYER = os.getenv('API_KEY_FOR_APILAYER', '')
