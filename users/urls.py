@@ -11,6 +11,7 @@ from .views import (
     PaymentDestroyAPIView,
     PaymentListAPIView,
     PaymentRetrieveAPIView,
+    PaymentStatusAPIView,
     PaymentUpdateAPIView,
     UserCreateApiView,
     UserListAPIView,
@@ -21,7 +22,7 @@ from .views import (
     UserProfileUpdateView,
     UserRegisterView,
     email_verification,
-    toggle_user_block, PaymentStatusAPIView
+    toggle_user_block
 )
 
 app_name = "users"

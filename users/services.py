@@ -1,9 +1,10 @@
-import stripe
-from dotenv import load_dotenv
-from config.settings import STRIPE_API_KEY, API_KEY_FOR_APILAYER
-from forex_python.converter import CurrencyRates
 import requests
+import stripe
 from django.conf import settings
+from dotenv import load_dotenv
+from forex_python.converter import CurrencyRates
+
+from config.settings import API_KEY_FOR_APILAYER, STRIPE_API_KEY
 
 stripe.api_key = STRIPE_API_KEY
 load_dotenv(override=True)
@@ -20,6 +21,7 @@ def create_stripe_product(name, description=None):
     except stripe.error.StripeError as e:
         raise Exception(f"Ошибка создания продукта в Stripe: {str(e)}")
 
+
 def create_stripe_price(amount, product_id, currency="usd"):
     """Создает цену в Stripe"""
     try:
@@ -31,6 +33,7 @@ def create_stripe_price(amount, product_id, currency="usd"):
         return price
     except stripe.error.StripeError as e:
         raise Exception(f"Ошибка создания цены в Stripe: {str(e)}")
+
 
 def create_stripe_session(price_id, success_url=None, cancel_url=None):
     """Создает сессию оплаты в Stripe"""
@@ -49,7 +52,7 @@ def create_stripe_session(price_id, success_url=None, cancel_url=None):
 def convert_via_apilayer(amount_rub, target_currency="USD"):
     """Конвертация через APILayer"""
     try:
-        API_KEY = getattr(settings, 'API_KEY_FOR_APILAYER', None)
+        API_KEY = getattr(settings, "API_KEY_FOR_APILAYER", None)
         if not API_KEY:
             print("API_KEY_FOR_APILAYER не настроен")
             return None
@@ -61,7 +64,7 @@ def convert_via_apilayer(amount_rub, target_currency="USD"):
 
         if response.status_code == 200:
             data = response.json()
-            rate = data['rates'][target_currency]
+            rate = data["rates"][target_currency]
             result = amount_rub * rate
             print(f"APILayer: 1 RUB = {rate} {target_currency}")
             print(f"APILayer: {amount_rub} RUB = {result:.2f} {target_currency}")
@@ -74,6 +77,7 @@ def convert_via_apilayer(amount_rub, target_currency="USD"):
         print(f"Ошибка APILayer: {e}")
         return None
 
+
 def convert_rub_to_usd(amount_rub):
     """
     Умная конвертация RUB в USD с несколькими fallback-ами
@@ -84,7 +88,7 @@ def convert_rub_to_usd(amount_rub):
     # 1. Пробуем forex-python (основной способ)
     try:
         c = CurrencyRates()
-        result = c.convert('RUB', 'USD', amount_rub)
+        result = c.convert("RUB", "USD", amount_rub)
         print(f"forex-python: {amount_rub} RUB = {result:.2f} USD")
         return result
     except Exception as e:
@@ -99,9 +103,9 @@ def convert_rub_to_usd(amount_rub):
     # 3. Пробуем Центробанк России (третий вариант)
     print("Пробуем Центробанк РФ...")
     try:
-        response = requests.get('https://www.cbr-xml-daily.ru/daily_json.js', timeout=5)
+        response = requests.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=5)
         data = response.json()
-        usd_rate = data['Valute']['USD']['Value']
+        usd_rate = data["Valute"]["USD"]["Value"]
         result = amount_rub / usd_rate
         print(f"ЦБ РФ: 1 USD = {usd_rate} RUB")
         print(f"ЦБ РФ: {amount_rub} RUB = {result:.2f} USD")
@@ -110,7 +114,7 @@ def convert_rub_to_usd(amount_rub):
         print(f"ЦБ РФ: {e}")
 
     # 4. Фиксированный курс (последний fallback)
-    exchange_rate = getattr(settings, 'EXCHANGE_RATE_USD_RUB', 80.0)
+    exchange_rate = getattr(settings, "EXCHANGE_RATE_USD_RUB", 80.0)
     result = amount_rub / exchange_rate
     print(f"Фиксированный курс: 1 USD = {exchange_rate} RUB")
     print(f"Результат: {amount_rub} RUB = {result:.2f} USD")

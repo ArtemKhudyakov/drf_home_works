@@ -1,13 +1,14 @@
 from rest_framework import serializers
 
-from .models import Payment, User
-from .services import get_payment_status
 from lms.models import Course, Lesson
+
+from .models import Payment, User
 from .services import (
-    create_stripe_product,
+    convert_rub_to_usd,
     create_stripe_price,
+    create_stripe_product,
     create_stripe_session,
-    convert_rub_to_usd
+    get_payment_status
 )
 
 
@@ -23,9 +24,17 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = [
-            "id", "user", "payment_date", "paid_course", "paid_lesson",
-            "amount", "payment_method", "session_id", "link_for_pay",
-            "status", "payment_url"
+            "id",
+            "user",
+            "payment_date",
+            "paid_course",
+            "paid_lesson",
+            "amount",
+            "payment_method",
+            "session_id",
+            "link_for_pay",
+            "status",
+            "payment_url",
         ]
         read_only_fields = ["session_id", "link_for_pay", "status"]
 
@@ -58,52 +67,51 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = [
-            "id", "user", "payment_date", "course_id", "lesson_id",
-            "amount", "payment_method", "session_id", "link_for_pay", "status"
+            "id",
+            "user",
+            "payment_date",
+            "course_id",
+            "lesson_id",
+            "amount",
+            "payment_method",
+            "session_id",
+            "link_for_pay",
+            "status",
         ]
-        extra_kwargs = {
-            'payment_method': {'required': True}
-        }
+        extra_kwargs = {"payment_method": {"required": True}}
 
     def get_status(self, obj):
         """Получает статус платежа из Stripe"""
         from .services import get_payment_status
+
         if obj.session_id:
             return get_payment_status(obj.session_id)
         return "created"
 
     def validate(self, attrs):
         """Проверяет, что указан только один объект для оплаты"""
-        course_id = attrs.get('course_id')
-        lesson_id = attrs.get('lesson_id')
+        course_id = attrs.get("course_id")
+        lesson_id = attrs.get("lesson_id")
 
         if not course_id and not lesson_id:
-            raise serializers.ValidationError(
-                "Укажите course_id или lesson_id"
-            )
+            raise serializers.ValidationError("Укажите course_id или lesson_id")
 
         if course_id and lesson_id:
-            raise serializers.ValidationError(
-                "Укажите только course_id или только lesson_id"
-            )
+            raise serializers.ValidationError("Укажите только course_id или только lesson_id")
 
         return attrs
 
     def create(self, validated_data):
         """Создает платеж и сессию в Stripe"""
-        from .services import (
-            create_stripe_product,
-            create_stripe_price,
-            create_stripe_session,
-            convert_rub_to_usd
-        )
         from lms.models import Course, Lesson
 
-        request = self.context.get('request')
+        from .services import convert_rub_to_usd, create_stripe_price, create_stripe_product, create_stripe_session
+
+        request = self.context.get("request")
         user = request.user
-        course_id = validated_data.pop('course_id', None)
-        lesson_id = validated_data.pop('lesson_id', None)
-        payment_method = validated_data.get('payment_method')
+        course_id = validated_data.pop("course_id", None)
+        lesson_id = validated_data.pop("lesson_id", None)
+        payment_method = validated_data.get("payment_method")
 
         # Получаем объект для оплаты
         if course_id:
@@ -120,6 +128,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         # Конвертируем в USD для Stripe (используем фиксированный курс)
         try:
             from .services import convert_rub_to_usd
+
             amount_usd = convert_rub_to_usd(amount)
         except:
             # Fallback на фиксированный курс
@@ -133,26 +142,25 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
             # Создаем платеж в базе
             payment_data = {
-                'user': user,
-                'amount': amount,
-                'payment_method': payment_method,
-                'session_id': session.id,
-                'link_for_pay': session.url
+                "user": user,
+                "amount": amount,
+                "payment_method": payment_method,
+                "session_id": session.id,
+                "link_for_pay": session.url,
             }
 
             if object_type == "course":
-                payment_data['paid_course'] = paid_object
+                payment_data["paid_course"] = paid_object
             else:
-                payment_data['paid_lesson'] = paid_object
+                payment_data["paid_lesson"] = paid_object
 
             payment = Payment.objects.create(**payment_data)
 
             return payment
 
         except Exception as e:
-            raise serializers.ValidationError(
-                f"Ошибка при создании платежа: {str(e)}"
-            )
+            raise serializers.ValidationError(f"Ошибка при создании платежа: {str(e)}")
+
 
 class UserPublicProfileSerializer(serializers.ModelSerializer):
     """Сериализатор для публичного просмотра (ограниченные данные)"""

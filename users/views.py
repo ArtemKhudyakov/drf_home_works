@@ -24,10 +24,11 @@ from .mixins import ManagerRequiredMixin
 from .models import Payment, User
 from .permissions import CanEditUserProfile, CanViewUserList
 from .serializers import (
+    PaymentCreateSerializer,
     PaymentSerializer,
     UserApiRegistrationSerializer,
     UserPrivateProfileSerializer,
-    UserPublicProfileSerializer, PaymentCreateSerializer
+    UserPublicProfileSerializer
 )
 
 
@@ -274,11 +275,7 @@ class PaymentStatusAPIView(generics.RetrieveAPIView):
         payment = self.get_object()
         status = get_payment_status(payment.session_id)
 
-        return Response({
-            "payment_id": payment.id,
-            "status": status,
-            "paid": status == "paid"
-        })
+        return Response({"payment_id": payment.id, "status": status, "paid": status == "paid"})
 
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user)
@@ -302,10 +299,7 @@ class PaymentCreateAPIView(generics.CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
         """Создает платеж с привязкой к пользователю"""
@@ -318,6 +312,7 @@ class PaymentUpdateAPIView(generics.UpdateAPIView):
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
 
 class PaymentDestroyAPIView(generics.DestroyAPIView):
     """Эндпоинт для удаления платежа"""

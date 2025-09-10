@@ -1,6 +1,7 @@
-from rest_framework import serializers
-from urllib.parse import urlparse
 import re
+from urllib.parse import urlparse
+
+from rest_framework import serializers
 
 
 class YouTubeLinkValidator:
@@ -11,11 +12,11 @@ class YouTubeLinkValidator:
     def __init__(self, fields):
         self.fields = fields if isinstance(fields, list) else [fields]
         self.allowed_domains = [
-            'youtube.com',
-            'www.youtube.com',
-            'youtu.be',
-            'www.youtu.be',
-            'm.youtube.com',
+            "youtube.com",
+            "www.youtube.com",
+            "youtu.be",
+            "www.youtu.be",
+            "m.youtube.com",
         ]
 
     def __call__(self, attrs):
@@ -37,15 +38,15 @@ class YouTubeLinkValidator:
     def validate_single_url(self, url, field_name):
         """Проверяет одну ссылку на соответствие YouTube"""
         # Добавляем http:// если отсутствует схема
-        if not url.startswith(('http://', 'https://')):
-            url = 'https://' + url
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
 
         try:
             parsed_url = urlparse(url)
             domain = parsed_url.netloc.lower()
 
             # Убираем www. для унификации проверки
-            domain = domain.replace('www.', '')
+            domain = domain.replace("www.", "")
 
             # Проверяем, что домен разрешен
             is_valid = False
@@ -55,11 +56,9 @@ class YouTubeLinkValidator:
                     break
 
             if not is_valid:
-                raise serializers.ValidationError({
-                    field_name: f'Ссылки разрешены только на YouTube. Найден запрещенный ресурс: {domain}'
-                })
+                raise serializers.ValidationError(
+                    {field_name: f"Ссылки разрешены только на YouTube. Найден запрещенный ресурс: {domain}"}
+                )
 
         except Exception as e:
-            raise serializers.ValidationError({
-                field_name: f'Ошибка проверки ссылки: {str(e)}'
-            })
+            raise serializers.ValidationError({field_name: f"Ошибка проверки ссылки: {str(e)}"})
