@@ -12,7 +12,7 @@
         <a class="btn btn-primary btn-lg" href="{% url 'users:register' %}" role="button">Начать обучение</a>
         {% else %}
         <a class="btn btn-success btn-lg" href="{% url 'courses:course-list' %}" role="button">К курсам (API)</a>
-        <a class="btn btn-info btn-lg ms-2" href="{% url 'lessons:lessons_list' %}" role="button">К урокам (API)</a>
+        <a class="btn btn-info btn-lg ms-2" href="{% url 'courses:lessons_list' %}" role="button">К урокам (API)</a>
         {% endif %}
     </div>
 </div>
