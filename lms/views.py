@@ -13,6 +13,7 @@ from .paginators import CoursePaginator, LessonPaginator
 from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
 from .serializer import CourseSerializer, LessonSerializer
 
+from .tasks import send_course_update_notification
 
 @method_decorator(
     name="list",
@@ -40,6 +41,12 @@ class CourseViewSet(ModelViewSet):
         course = serializer.save()
         course.owner = self.request.user
         course.save()
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        # Отправка уведомления асинхронно
+        send_course_update_notification.delay(course.id)
+        return course
 
 
 class LessonCreateAPIView(CreateAPIView):
