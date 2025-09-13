@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
@@ -44,8 +45,14 @@ class CourseViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         course = serializer.save()
-        # Отправка уведомления асинхронно
+
+        # Обновляем время последнего изменения
+        course.updated_at = timezone.now()
+        course.save()
+
+        # Асинхронно отправляем уведомления
         send_course_update_notification.delay(course.id)
+
         return course
 
 
@@ -71,6 +78,15 @@ class LessonUpdateAPIView(UpdateAPIView):
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
 
+    def perform_update(self, serializer):
+        lesson = serializer.save()
+        lesson.updated_at = timezone.now()  # Добавляем поле updated_at в модель Lesson
+        lesson.save()
+
+        # Запускаем проверку обновлений курса
+        from .tasks import check_lesson_updates
+        check_lesson_updates.delay()
+
 
 class LessonRetrieveAPIView(RetrieveAPIView):
     queryset = Lesson.objects.all()
@@ -93,7 +109,26 @@ class SubscriptionAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        """Получить все подписки текущего пользователя"""
+        user = request.user
+        subscriptions = Subscription.objects.filter(user=user)
+
+        # Сериализуем данные
+        data = []
+        for subscription in subscriptions:
+            data.append({
+                "id": subscription.id,
+                "course_id": subscription.course.id,
+                "course_name": subscription.course.name,
+                "subscribed_at": subscription.created_at,
+                "is_active": True
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
+
     def post(self, request, *args, **kwargs):
+        """Добавить/удалить подписку"""
         user = request.user
         course_id = request.data.get("course_id")
 
