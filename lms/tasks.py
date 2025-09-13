@@ -52,21 +52,57 @@ def send_course_update_notification(course_id):
 
 @shared_task
 def check_inactive_users():
-    """Проверка неактивных пользователей"""
+    """Проверка и блокировка неактивных пользователей (не заходивших более месяца)"""
     from users.models import User
+    from django.utils import timezone
+    from datetime import timedelta
+
+    # Вычисляем дату (30 дней назад)
     month_ago = timezone.now() - timedelta(days=30)
-    inactive_users = User.objects.filter(last_login__lt=month_ago, is_active=True)
+
+    # Находим неактивных пользователей (исключаем суперпользователей)
+    inactive_users = User.objects.filter(
+        last_login__lt=month_ago,  # Не заходили более месяца
+        is_active=True  # Только активные
+    ).exclude(
+        is_superuser=True  # Исключаем суперпользователей
+    )
+
+    blocked_count = 0
+    notified_count = 0
+
+    print(f"🔍 Найдено неактивных пользователей: {inactive_users.count()}")
 
     for user in inactive_users:
-        send_mail(
-            subject='Мы скучаем по вам!',
-            message='Вы давно не заходили на нашу платформу. У нас есть новые интересные курсы!',
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        try:
+            # Блокируем пользователя
+            user.is_active = False
+            user.save()
+            blocked_count += 1
 
-    return f"Проверено {inactive_users.count()} неактивных пользователей"
+            print(f"🔒 Заблокирован: {user.email} (последний вход: {user.last_login})")
+
+            # Отправляем уведомление
+            send_mail(
+                subject='Ваш аккаунт заблокирован за неактивность',
+                message=f'Уважаемый {user.username},\n\n'
+                        f'Ваш аккаунт {user.email} был автоматически заблокирован '
+                        f'из-за длительного отсутствия активности на платформе.\n'
+                        f'Последний вход: {user.last_login.strftime("%d.%m.%Y %H:%M")}\n\n'
+                        f'Для разблокировки аккаунта обратитесь к администратору.\n\n'
+                        f'С уважением,\nКоманда образовательной платформы',
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+            notified_count += 1
+
+            print(f"📧 Уведомление отправлено: {user.email}")
+
+        except Exception as e:
+            print(f"❌ Ошибка при блокировке {user.email}: {e}")
+
+    return f"Заблокировано {blocked_count} пользователей, отправлено {notified_count} уведомлений"
 
 
 @shared_task
