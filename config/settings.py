@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from .celery_beat_schedule import CELERY_BEAT_SCHEDULE
 
 load_dotenv(override=True)
 
@@ -33,6 +34,8 @@ INSTALLED_APPS = [
     "lms",
     "django_extensions",
     "drf_yasg",
+    'django_celery_beat',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -175,3 +178,17 @@ SIMPLE_JWT = {
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 
 API_KEY_FOR_APILAYER = os.getenv("API_KEY_FOR_APILAYER", "")
+
+
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SCHEDULE = CELERY_BEAT_SCHEDULE
+
+INACTIVE_USER_DAYS = 30  # Количество дней неактивности для блокировки

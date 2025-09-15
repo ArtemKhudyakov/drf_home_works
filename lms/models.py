@@ -22,6 +22,12 @@ class Course(models.Model):
         help_text="Укажите владельца курса",
     )
 
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата последнего обновления",
+        help_text="Автоматически обновляется при изменении курса"
+    )
+
     def __str__(self):
         return self.name
 
@@ -51,6 +57,11 @@ class Lesson(models.Model):
         blank=True,
         verbose_name="Владелец",
         help_text="Укажите владельца урока",
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата последнего обновления"
     )
 
     def __str__(self):

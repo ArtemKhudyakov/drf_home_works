@@ -19,6 +19,49 @@
 0016: application = get_asgi_application()
 
 ================================================================================
+ФАЙЛ: D:\python\django\drf_home_works\config\celery.py
+================================================================================
+0001: import os
+0002: 
+0003: from celery import Celery
+0004: 
+0005: # Set the default Django settings module for the 'celery' program.
+0006: os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+0007: 
+0008: app = Celery('config')
+0009: 
+0010: 
+0011: app.config_from_object('django.conf:settings', namespace='CELERY')
+0012: 
+0013: # Load task modules from all registered Django apps.
+0014: app.autodiscover_tasks()
+0015: 
+0016: 
+0017: @app.task(bind=True, ignore_result=True)
+0018: def debug_task(self):
+0019:     print(f'Request: {self.request!r}')
+
+================================================================================
+ФАЙЛ: D:\python\django\drf_home_works\config\celery_beat_schedule.py
+================================================================================
+0001: from celery.schedules import crontab
+0002: 
+0003: CELERY_BEAT_SCHEDULE = {
+0004:     'check-inactive-users-weekly': {
+0005:         'task': 'lms.tasks.check_inactive_users',
+0006:         'schedule': crontab(day_of_week=1, hour=9, minute=0),  # РљР°Р¶РґС‹Р№ РїРѕРЅРµРґРµР»СЊРЅРёРє РІ 9:00
+0007:     },
+0008:     'update-course-statistics-daily': {
+0009:         'task': 'lms.tasks.update_course_statistics',
+0010:         'schedule': crontab(hour=2, minute=0),  # Р•Р¶РµРґРЅРµРІРЅРѕ РІ 2:00
+0011:     },
+0012:     'send-newsletter-monthly': {
+0013:         'task': 'lms.tasks.send_newsletter',
+0014:         'schedule': crontab(day_of_month=1, hour=10, minute=0),  # 1-РіРѕ С‡РёСЃР»Р° РєР°Р¶РґРѕРіРѕ РјРµСЃСЏС†Р° РІ 10:00
+0015:     },
+0016: }
+
+================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\config\settings.py
 ================================================================================
 0001: import os
@@ -26,176 +69,193 @@
 0003: from pathlib import Path
 0004: 
 0005: from dotenv import load_dotenv
-0006: 
-0007: load_dotenv(override=True)
-0008: 
-0009: # Build paths inside the project like this: BASE_DIR / 'subdir'.
-0010: BASE_DIR = Path(__file__).resolve().parent.parent
-0011: 
-0012: # SECURITY WARNING: keep the secret key used in production secret!
-0013: SECRET_KEY = os.getenv("SECRET_KEY")
-0014: 
-0015: # SECURITY WARNING: don't run with debug turned on in production!
-0016: DEBUG = True if os.getenv("DEBUG") == "True" else False
-0017: 
-0018: ALLOWED_HOSTS = []
-0019: 
-0020: # Application definition
-0021: 
-0022: INSTALLED_APPS = [
-0023:     "django.contrib.admin",
-0024:     "django.contrib.auth",
-0025:     "django.contrib.contenttypes",
-0026:     "django.contrib.sessions",
-0027:     "django.contrib.messages",
-0028:     "django.contrib.staticfiles",
-0029:     "django_filters",
-0030:     "rest_framework",
-0031:     "rest_framework_simplejwt",
-0032:     "users",
-0033:     "lms",
-0034:     'django_extensions',
-0035:     'drf_yasg',
-0036: ]
-0037: 
-0038: MIDDLEWARE = [
-0039:     "django.middleware.security.SecurityMiddleware",
-0040:     "django.contrib.sessions.middleware.SessionMiddleware",
-0041:     "django.middleware.common.CommonMiddleware",
-0042:     "django.middleware.csrf.CsrfViewMiddleware",
-0043:     "django.contrib.auth.middleware.AuthenticationMiddleware",
-0044:     "django.contrib.messages.middleware.MessageMiddleware",
-0045:     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-0046: ]
-0047: 
-0048: ROOT_URLCONF = "config.urls"
-0049: 
-0050: TEMPLATES = [
-0051:     {
-0052:         "BACKEND": "django.template.backends.django.DjangoTemplates",
-0053:         "DIRS": [BASE_DIR / "templates"],
-0054:         "APP_DIRS": True,
-0055:         "OPTIONS": {
-0056:             "context_processors": [
-0057:                 "django.template.context_processors.request",
-0058:                 "django.contrib.auth.context_processors.auth",
-0059:                 "django.contrib.messages.context_processors.messages",
-0060:             ],
-0061:         },
-0062:     },
-0063: ]
-0064: 
-0065: WSGI_APPLICATION = "config.wsgi.application"
-0066: 
-0067: # Database
-0068: # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+0006: from .celery_beat_schedule import CELERY_BEAT_SCHEDULE
+0007: 
+0008: load_dotenv(override=True)
+0009: 
+0010: # Build paths inside the project like this: BASE_DIR / 'subdir'.
+0011: BASE_DIR = Path(__file__).resolve().parent.parent
+0012: 
+0013: # SECURITY WARNING: keep the secret key used in production secret!
+0014: SECRET_KEY = os.getenv("SECRET_KEY")
+0015: 
+0016: # SECURITY WARNING: don't run with debug turned on in production!
+0017: DEBUG = True if os.getenv("DEBUG") == "True" else False
+0018: 
+0019: ALLOWED_HOSTS = []
+0020: 
+0021: # Application definition
+0022: 
+0023: INSTALLED_APPS = [
+0024:     "django.contrib.admin",
+0025:     "django.contrib.auth",
+0026:     "django.contrib.contenttypes",
+0027:     "django.contrib.sessions",
+0028:     "django.contrib.messages",
+0029:     "django.contrib.staticfiles",
+0030:     "django_filters",
+0031:     "rest_framework",
+0032:     "rest_framework_simplejwt",
+0033:     "users",
+0034:     "lms",
+0035:     "django_extensions",
+0036:     "drf_yasg",
+0037:     'django_celery_beat',
+0038:     'django_celery_results',
+0039: ]
+0040: 
+0041: MIDDLEWARE = [
+0042:     "django.middleware.security.SecurityMiddleware",
+0043:     "django.contrib.sessions.middleware.SessionMiddleware",
+0044:     "django.middleware.common.CommonMiddleware",
+0045:     "django.middleware.csrf.CsrfViewMiddleware",
+0046:     "django.contrib.auth.middleware.AuthenticationMiddleware",
+0047:     "django.contrib.messages.middleware.MessageMiddleware",
+0048:     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+0049: ]
+0050: 
+0051: ROOT_URLCONF = "config.urls"
+0052: 
+0053: TEMPLATES = [
+0054:     {
+0055:         "BACKEND": "django.template.backends.django.DjangoTemplates",
+0056:         "DIRS": [BASE_DIR / "templates"],
+0057:         "APP_DIRS": True,
+0058:         "OPTIONS": {
+0059:             "context_processors": [
+0060:                 "django.template.context_processors.request",
+0061:                 "django.contrib.auth.context_processors.auth",
+0062:                 "django.contrib.messages.context_processors.messages",
+0063:             ],
+0064:         },
+0065:     },
+0066: ]
+0067: 
+0068: WSGI_APPLICATION = "config.wsgi.application"
 0069: 
-0070: DATABASES = {
-0071:     "default": {
-0072:         "ENGINE": "django.db.backends.postgresql_psycopg2",
-0073:         "NAME": os.getenv("NAME"),
-0074:         "USER": os.getenv("USER"),
-0075:         "PASSWORD": os.getenv("DB_PASSWORD"),
-0076:         "HOST": os.getenv("HOST"),
-0077:         "PORT": os.getenv("PORT"),
-0078:     }
-0079: }
-0080: 
-0081: # Password validation
-0082: # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+0070: # Database
+0071: # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+0072: 
+0073: DATABASES = {
+0074:     "default": {
+0075:         "ENGINE": "django.db.backends.postgresql_psycopg2",
+0076:         "NAME": os.getenv("NAME"),
+0077:         "USER": os.getenv("USER"),
+0078:         "PASSWORD": os.getenv("DB_PASSWORD"),
+0079:         "HOST": os.getenv("HOST"),
+0080:         "PORT": os.getenv("PORT"),
+0081:     }
+0082: }
 0083: 
-0084: AUTH_PASSWORD_VALIDATORS = [
-0085:     {
-0086:         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-0087:     },
+0084: # Password validation
+0085: # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+0086: 
+0087: AUTH_PASSWORD_VALIDATORS = [
 0088:     {
-0089:         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+0089:         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
 0090:     },
 0091:     {
-0092:         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+0092:         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
 0093:     },
 0094:     {
-0095:         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+0095:         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
 0096:     },
-0097: ]
-0098: 
-0099: REST_FRAMEWORK = {
-0100:     "DEFAULT_FILTER_BACKENDS": [
-0101:         "django_filters.rest_framework.DjangoFilterBackend",
-0102:         "rest_framework.filters.OrderingFilter",
-0103:     ],
-0104:     "DEFAULT_AUTHENTICATION_CLASSES": [
-0105:         "rest_framework_simplejwt.authentication.JWTAuthentication",
-0106:         "rest_framework.authentication.SessionAuthentication",
-0107:         "rest_framework.authentication.TokenAuthentication",
-0108:     ],
-0109:     "DEFAULT_PERMISSION_CLASSES": [
-0110:         "rest_framework.permissions.IsAuthenticated",
+0097:     {
+0098:         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+0099:     },
+0100: ]
+0101: 
+0102: REST_FRAMEWORK = {
+0103:     "DEFAULT_FILTER_BACKENDS": [
+0104:         "django_filters.rest_framework.DjangoFilterBackend",
+0105:         "rest_framework.filters.OrderingFilter",
+0106:     ],
+0107:     "DEFAULT_AUTHENTICATION_CLASSES": [
+0108:         "rest_framework_simplejwt.authentication.JWTAuthentication",
+0109:         "rest_framework.authentication.SessionAuthentication",
+0110:         "rest_framework.authentication.TokenAuthentication",
 0111:     ],
-0112: }
-0113: 
-0114: # Internationalization
-0115: # https://docs.djangoproject.com/en/5.2/topics/i18n/
+0112:     "DEFAULT_PERMISSION_CLASSES": [
+0113:         "rest_framework.permissions.IsAuthenticated",
+0114:     ],
+0115: }
 0116: 
-0117: LANGUAGE_CODE = "en-us"
-0118: 
-0119: USE_I18N = True
-0120: 
-0121: USE_TZ = True
-0122: 
-0123: TIME_ZONE = "Europe/Moscow"
-0124: 
-0125: # Static files (CSS, JavaScript, Images)
-0126: # https://docs.djangoproject.com/en/5.2/howto/static-files/
+0117: # Internationalization
+0118: # https://docs.djangoproject.com/en/5.2/topics/i18n/
+0119: 
+0120: LANGUAGE_CODE = "en-us"
+0121: 
+0122: USE_I18N = True
+0123: 
+0124: USE_TZ = True
+0125: 
+0126: TIME_ZONE = "Europe/Moscow"
 0127: 
-0128: STATIC_URL = "static/"
-0129: STATICFILES_DIRS = (BASE_DIR / "static",)
-0130: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-0131: STATIC_ROOT = BASE_DIR / "staticfiles"
-0132: 
-0133: # Default primary key field type
-0134: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+0128: # Static files (CSS, JavaScript, Images)
+0129: # https://docs.djangoproject.com/en/5.2/howto/static-files/
+0130: 
+0131: STATIC_URL = "static/"
+0132: STATICFILES_DIRS = (BASE_DIR / "static",)
+0133: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+0134: STATIC_ROOT = BASE_DIR / "staticfiles"
 0135: 
-0136: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-0137: 
-0138: MEDIA_URL = "media/"
-0139: 
-0140: MEDIA_ROOT = BASE_DIR / "media"
-0141: 
-0142: AUTH_USER_MODEL = "users.User"
-0143: 
-0144: LOGIN_REDIRECT_URL = "home"
-0145: LOGOUT_REDIRECT_URL = "home"
-0146: LOGIN_URL = "users:login"
-0147: 
-0148: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-0149: EMAIL_HOST = "smtp.yandex.ru"
-0150: EMAIL_PORT = 465
-0151: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-0152: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-0153: EMAIL_USE_TLS = False
-0154: EMAIL_USE_SSL = True
-0155: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
-0156: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
-0157: 
-0158: CACHES = {
-0159:     "default": {
-0160:         "BACKEND": "django_redis.cache.RedisCache",
-0161:         "LOCATION": "redis://127.0.0.1:6379/2",
-0162:         "OPTIONS": {
-0163:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-0164:         },
-0165:         "KEY_PREFIX": "mail_service_",
-0166:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
-0167:     }
-0168: }
-0169: 
-0170: SIMPLE_JWT = {
-0171:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
-0172:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-0173: }
-0174: 
-0175: STRIPE_API_KEY = os.getenv('STRIPE_API_KEY')
+0136: # Default primary key field type
+0137: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+0138: 
+0139: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+0140: 
+0141: MEDIA_URL = "media/"
+0142: 
+0143: MEDIA_ROOT = BASE_DIR / "media"
+0144: 
+0145: AUTH_USER_MODEL = "users.User"
+0146: 
+0147: LOGIN_REDIRECT_URL = "home"
+0148: LOGOUT_REDIRECT_URL = "home"
+0149: LOGIN_URL = "users:login"
+0150: 
+0151: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+0152: EMAIL_HOST = "smtp.yandex.ru"
+0153: EMAIL_PORT = 465
+0154: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+0155: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+0156: EMAIL_USE_TLS = False
+0157: EMAIL_USE_SSL = True
+0158: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
+0159: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
+0160: 
+0161: CACHES = {
+0162:     "default": {
+0163:         "BACKEND": "django_redis.cache.RedisCache",
+0164:         "LOCATION": "redis://127.0.0.1:6379/2",
+0165:         "OPTIONS": {
+0166:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+0167:         },
+0168:         "KEY_PREFIX": "mail_service_",
+0169:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
+0170:     }
+0171: }
+0172: 
+0173: SIMPLE_JWT = {
+0174:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
+0175:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+0176: }
+0177: 
+0178: STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+0179: 
+0180: API_KEY_FOR_APILAYER = os.getenv("API_KEY_FOR_APILAYER", "")
+0181: 
+0182: 
+0183: CELERY_TASK_TRACK_STARTED = True
+0184: CELERY_TASK_TIME_LIMIT = 30 * 60
+0185: CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+0186: CELERY_RESULT_BACKEND = 'django-db'
+0187: CELERY_ACCEPT_CONTENT = ['json']
+0188: CELERY_TASK_SERIALIZER = 'json'
+0189: CELERY_RESULT_SERIALIZER = 'json'
+0190: CELERY_TIMEZONE = TIME_ZONE
+0191: CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+0192: CELERY_BEAT_SCHEDULE = CELERY_BEAT_SCHEDULE
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\config\urls.py
@@ -205,36 +265,35 @@
 0003: from django.contrib import admin
 0004: from django.urls import include, path
 0005: from django.views.generic import TemplateView
-0006: 
-0007: from rest_framework import permissions
-0008: from drf_yasg.views import get_schema_view
-0009: from drf_yasg import openapi
-0010: 
-0011: ...
-0012: 
-0013: schema_view = get_schema_view(
-0014:     openapi.Info(
-0015:         title="Snippets API",
-0016:         default_version='v1',
-0017:         description="Test description",
-0018:         terms_of_service="https://www.google.com/policies/terms/",
-0019:         contact=openapi.Contact(email="contact@snippets.local"),
-0020:         license=openapi.License(name="BSD License"),
-0021:     ),
-0022:     public=True,
-0023:     permission_classes=(permissions.AllowAny,),
-0024: )
-0025: 
-0026: urlpatterns = [
-0027:                   path("admin/", admin.site.urls),
-0028:                   path("users/", include("users.urls", namespace="users")),
-0029:                   path("", TemplateView.as_view(template_name="home.html"), name="home"),
-0030:                   path("courses/", include("lms.urls", namespace="courses")),
-0031:                   # path("lessons/", include("lms.urls", namespace="lessons")),
-0032:                   path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-0033:                   path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-0034:                   path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-0035:               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+0006: from drf_yasg import openapi
+0007: from drf_yasg.views import get_schema_view
+0008: from rest_framework import permissions
+0009: 
+0010: ...
+0011: 
+0012: schema_view = get_schema_view(
+0013:     openapi.Info(
+0014:         title="Snippets API",
+0015:         default_version="v1",
+0016:         description="Test description",
+0017:         terms_of_service="https://www.google.com/policies/terms/",
+0018:         contact=openapi.Contact(email="contact@snippets.local"),
+0019:         license=openapi.License(name="BSD License"),
+0020:     ),
+0021:     public=True,
+0022:     permission_classes=(permissions.AllowAny,),
+0023: )
+0024: 
+0025: urlpatterns = [
+0026:     path("admin/", admin.site.urls),
+0027:     path("users/", include("users.urls", namespace="users")),
+0028:     path("", TemplateView.as_view(template_name="home.html"), name="home"),
+0029:     path("courses/", include("lms.urls", namespace="courses")),
+0030:     # path("lessons/", include("lms.urls", namespace="lessons")),
+0031:     path("swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"),
+0032:     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+0033:     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+0034: ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\config\wsgi.py
@@ -259,6 +318,9 @@
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\config\__init__.py
 ================================================================================
+0001: from .celery import app as celery_app
+0002: 
+0003: __all__ = ('celery_app',)
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\management\commands\load_lms_data.py
@@ -599,52 +661,44 @@
 0064: 
 0065: class Subscription(models.Model):
 0066:     user = models.ForeignKey(
-0067:         "users.User",
-0068:         on_delete=models.CASCADE,
-0069:         verbose_name="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ",
-0070:         related_name="subscriptions"
-0071:     )
-0072:     course = models.ForeignKey(
-0073:         'Course',
-0074:         on_delete=models.CASCADE,
-0075:         verbose_name="РљСѓСЂСЃ",
-0076:         related_name="subscriptions"
-0077:     )
-0078:     created_at = models.DateTimeField(
-0079:         auto_now_add=True,
-0080:         verbose_name="Р”Р°С‚Р° РїРѕРґРїРёСЃРєРё"
-0081:     )
-0082: 
-0083:     class Meta:
-0084:         verbose_name = "РџРѕРґРїРёСЃРєР°"
-0085:         verbose_name_plural = "РџРѕРґРїРёСЃРєРё"
-0086:         unique_together = ['user', 'course']  # РћРґРЅР° РїРѕРґРїРёСЃРєР° РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РєСѓСЂСЃ
-0087:         ordering = ['-created_at']
-0088: 
-0089:     def __str__(self):
-0090:         return f"{self.user.username} - {self.course.name}"
+0067:         "users.User", on_delete=models.CASCADE, verbose_name="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ", related_name="subscriptions"
+0068:     )
+0069:     course = models.ForeignKey("Course", on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ", related_name="subscriptions")
+0070:     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Р”Р°С‚Р° РїРѕРґРїРёСЃРєРё")
+0071: 
+0072:     class Meta:
+0073:         verbose_name = "РџРѕРґРїРёСЃРєР°"
+0074:         verbose_name_plural = "РџРѕРґРїРёСЃРєРё"
+0075:         unique_together = ["user", "course"]  # РћРґРЅР° РїРѕРґРїРёСЃРєР° РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РєСѓСЂСЃ
+0076:         ordering = ["-created_at"]
+0077: 
+0078:     def __str__(self):
+0079:         return f"{self.user.username} - {self.course.name}"
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\paginators.py
 ================================================================================
 0001: from rest_framework.pagination import PageNumberPagination
 0002: 
-0003: class LessonPaginator(PageNumberPagination):
-0004:     """
-0005:     РџР°РіРёРЅР°С‚РѕСЂ РґР»СЏ СѓСЂРѕРєРѕРІ
-0006:     """
-0007:     page_size = 5  # РљРѕР»РёС‡РµСЃС‚РІРѕ СѓСЂРѕРєРѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
-0008:     page_size_query_param = 'page_size'  # РџР°СЂР°РјРµС‚СЂ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ РєРѕР»РёС‡РµСЃС‚РІР° СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
-0009:     max_page_size = 50  # РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
-0010: 
-0011: 
-0012: class CoursePaginator(PageNumberPagination):
-0013:     """
-0014:     РџР°РіРёРЅР°С‚РѕСЂ РґР»СЏ РєСѓСЂСЃРѕРІ
+0003: 
+0004: class LessonPaginator(PageNumberPagination):
+0005:     """
+0006:     РџР°РіРёРЅР°С‚РѕСЂ РґР»СЏ СѓСЂРѕРєРѕРІ
+0007:     """
+0008: 
+0009:     page_size = 5  # РљРѕР»РёС‡РµСЃС‚РІРѕ СѓСЂРѕРєРѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+0010:     page_size_query_param = "page_size"  # РџР°СЂР°РјРµС‚СЂ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ РєРѕР»РёС‡РµСЃС‚РІР° СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
+0011:     max_page_size = 50  # РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
+0012: 
+0013: 
+0014: class CoursePaginator(PageNumberPagination):
 0015:     """
-0016:     page_size = 2  # РљРѕР»РёС‡РµСЃС‚РІРѕ РєСѓСЂСЃРѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
-0017:     page_size_query_param = 'page_size'  # РџР°СЂР°РјРµС‚СЂ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ РєРѕР»РёС‡РµСЃС‚РІР° СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
-0018:     max_page_size = 20  # РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
+0016:     РџР°РіРёРЅР°С‚РѕСЂ РґР»СЏ РєСѓСЂСЃРѕРІ
+0017:     """
+0018: 
+0019:     page_size = 2  # РљРѕР»РёС‡РµСЃС‚РІРѕ РєСѓСЂСЃРѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+0020:     page_size_query_param = "page_size"  # РџР°СЂР°РјРµС‚СЂ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ РєРѕР»РёС‡РµСЃС‚РІР° СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
+0021:     max_page_size = 20  # РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\permissions.py
@@ -713,456 +767,471 @@
 ФАЙЛ: D:\python\django\drf_home_works\lms\serializer.py
 ================================================================================
 0001: from rest_framework import serializers
-0002: from .models import Course, Lesson, Subscription
-0003: from .validators import YouTubeLinkValidator
-0004: 
-0005: class LessonSerializer(serializers.ModelSerializer):
-0006:     class Meta:
-0007:         model = Lesson
-0008:         fields = "__all__"
-0009:         validators = [
-0010:             YouTubeLinkValidator(fields=['video_link', 'description'])
-0011:         ]
+0002: 
+0003: from .models import Course, Lesson, Subscription
+0004: from .validators import YouTubeLinkValidator
+0005: 
+0006: 
+0007: class LessonSerializer(serializers.ModelSerializer):
+0008:     class Meta:
+0009:         model = Lesson
+0010:         fields = "__all__"
+0011:         validators = [YouTubeLinkValidator(fields=["video_link", "description"])]
 0012: 
-0013: class CourseSerializer(serializers.ModelSerializer):
-0014:     lessons_count = serializers.IntegerField(read_only=True)
-0015:     lessons = LessonSerializer(many=True, read_only=True, source="lesson_set")
-0016:     is_subscribed = serializers.SerializerMethodField()  # РќРѕРІРѕРµ РїРѕР»Рµ
-0017: 
-0018:     class Meta:
-0019:         model = Course
-0020:         fields = [
-0021:             "id", "name", "description", "preview",
-0022:             "lessons_count", "lessons", "owner", "is_subscribed"
-0023:         ]
-0024:         validators = [
-0025:             YouTubeLinkValidator(fields=['description'])
-0026:         ]
-0027: 
-0028:     def get_is_subscribed(self, obj):
-0029:         """РџСЂРѕРІРµСЂСЏРµС‚, РїРѕРґРїРёСЃР°РЅ Р»Рё С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅР° РєСѓСЂСЃ"""
-0030:         request = self.context.get('request')
-0031:         if request and request.user.is_authenticated:
-0032:             return Subscription.objects.filter(
-0033:                 user=request.user,
-0034:                 course=obj
-0035:             ).exists()
-0036:         return False
+0013: 
+0014: class CourseSerializer(serializers.ModelSerializer):
+0015:     lessons_count = serializers.IntegerField(read_only=True)
+0016:     lessons = LessonSerializer(many=True, read_only=True, source="lesson_set")
+0017:     is_subscribed = serializers.SerializerMethodField()  # РќРѕРІРѕРµ РїРѕР»Рµ
+0018: 
+0019:     class Meta:
+0020:         model = Course
+0021:         fields = ["id", "name", "description", "preview", "lessons_count", "lessons", "owner", "is_subscribed"]
+0022:         validators = [YouTubeLinkValidator(fields=["description"])]
+0023: 
+0024:     def get_is_subscribed(self, obj):
+0025:         """РџСЂРѕРІРµСЂСЏРµС‚, РїРѕРґРїРёСЃР°РЅ Р»Рё С‚РµРєСѓС‰РёР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅР° РєСѓСЂСЃ"""
+0026:         request = self.context.get("request")
+0027:         if request and request.user.is_authenticated:
+0028:             return Subscription.objects.filter(user=request.user, course=obj).exists()
+0029:         return False
+
+================================================================================
+ФАЙЛ: D:\python\django\drf_home_works\lms\tasks.py
+================================================================================
+0001: from celery import shared_task
+0002: from django.core.mail import send_mail
+0003: from django.conf import settings
+0004: from .models import Course, Subscription
+0005: from datetime import datetime, timedelta
+0006: from django.utils import timezone
+0007: 
+0008: 
+0009: @shared_task
+0010: def send_course_update_notification(course_id):
+0011:     """РћС‚РїСЂР°РІРєР° СѓРІРµРґРѕРјР»РµРЅРёСЏ РѕР± РѕР±РЅРѕРІР»РµРЅРёРё РєСѓСЂСЃР°"""
+0012:     try:
+0013:         course = Course.objects.get(id=course_id)
+0014:         subscribers = Subscription.objects.filter(course=course)
+0015: 
+0016:         for subscription in subscribers:
+0017:             send_mail(
+0018:                 subject=f'РћР±РЅРѕРІР»РµРЅРёРµ РєСѓСЂСЃР°: {course.name}',
+0019:                 message=f'РљСѓСЂСЃ "{course.name}" Р±С‹Р» РѕР±РЅРѕРІР»РµРЅ. РџСЂРѕРІРµСЂСЊС‚Рµ РЅРѕРІС‹Рµ РјР°С‚РµСЂРёР°Р»С‹!',
+0020:                 from_email=settings.EMAIL_HOST_USER,
+0021:                 recipient_list=[subscription.user.email],
+0022:                 fail_silently=False,
+0023:             )
+0024: 
+0025:         return f"РЈРІРµРґРѕРјР»РµРЅРёСЏ РѕС‚РїСЂР°РІР»РµРЅС‹ РґР»СЏ {subscribers.count()} РїРѕРґРїРёСЃС‡РёРєРѕРІ"
+0026:     except Course.DoesNotExist:
+0027:         return "РљСѓСЂСЃ РЅРµ РЅР°Р№РґРµРЅ"
+0028: 
+0029: 
+0030: @shared_task
+0031: def check_inactive_users():
+0032:     """РџСЂРѕРІРµСЂРєР° РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"""
+0033:     from users.models import User
+0034:     month_ago = timezone.now() - timedelta(days=30)
+0035:     inactive_users = User.objects.filter(last_login__lt=month_ago, is_active=True)
+0036: 
+0037:     for user in inactive_users:
+0038:         send_mail(
+0039:             subject='РњС‹ СЃРєСѓС‡Р°РµРј РїРѕ РІР°Рј!',
+0040:             message='Р’С‹ РґР°РІРЅРѕ РЅРµ Р·Р°С…РѕРґРёР»Рё РЅР° РЅР°С€Сѓ РїР»Р°С‚С„РѕСЂРјСѓ. РЈ РЅР°СЃ РµСЃС‚СЊ РЅРѕРІС‹Рµ РёРЅС‚РµСЂРµСЃРЅС‹Рµ РєСѓСЂСЃС‹!',
+0041:             from_email=settings.EMAIL_HOST_USER,
+0042:             recipient_list=[user.email],
+0043:             fail_silently=False,
+0044:         )
+0045: 
+0046:     return f"РџСЂРѕРІРµСЂРµРЅРѕ {inactive_users.count()} РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
+0047: 
+0048: 
+0049: @shared_task
+0050: def update_course_statistics():
+0051:     """РћР±РЅРѕРІР»РµРЅРёРµ СЃС‚Р°С‚РёСЃС‚РёРєРё РєСѓСЂСЃРѕРІ"""
+0052:     courses = Course.objects.all()
+0053:     for course in courses:
+0054:         course.lessons_count = course.lesson_set.count()
+0055:         course.subscribers_count = course.subscriptions.count()
+0056:         course.save()
+0057: 
+0058:     return "РЎС‚Р°С‚РёСЃС‚РёРєР° РєСѓСЂСЃРѕРІ РѕР±РЅРѕРІР»РµРЅР°"
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\tests.py
 ================================================================================
 0001: from django.test import TestCase
-0002: from rest_framework import serializers
-0003: from rest_framework.test import APITestCase
-0004: from .models import Lesson, Course, Subscription
-0005: from .validators import YouTubeLinkValidator
-0006: from .serializer import LessonSerializer, CourseSerializer
-0007: 
-0008: from rest_framework import status
-0009: from django.urls import reverse
+0002: from django.urls import reverse
+0003: from rest_framework import serializers, status
+0004: from rest_framework.test import APITestCase
+0005: 
+0006: from .models import Course, Lesson, Subscription
+0007: from .paginators import CoursePaginator, LessonPaginator
+0008: from .serializer import CourseSerializer, LessonSerializer
+0009: from .validators import YouTubeLinkValidator
 0010: 
-0011: from .paginators import LessonPaginator, CoursePaginator
-0012: 
-0013: class YouTubeValidatorTest(TestCase):
-0014: 
-0015:     def test_validator_valid_youtube_links(self):
-0016:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃ СЂР°Р·СЂРµС€РµРЅРЅС‹РјРё YouTube СЃСЃС‹Р»РєР°РјРё"""
-0017:         validator = YouTubeLinkValidator(fields=['video_link', 'description'])
-0018: 
-0019:         valid_data = {
-0020:             'video_link': 'https://youtube.com/watch?v=dQw4w9WgXcQ',
-0021:             'description': 'РћР±СѓС‡Р°СЋС‰РµРµ РІРёРґРµРѕ: https://youtu.be/test123'
-0022:         }
-0023: 
-0024:         # РќРµ РґРѕР»Р¶РЅРѕ РІС‹Р·С‹РІР°С‚СЊ РёСЃРєР»СЋС‡РµРЅРёР№
-0025:         try:
-0026:             validator(valid_data)
-0027:         except serializers.ValidationError:
-0028:             self.fail("Р’Р°Р»РёРґР°С‚РѕСЂ РѕС‚РІРµСЂРі РІР°Р»РёРґРЅС‹Рµ YouTube СЃСЃС‹Р»РєРё")
-0029: 
-0030:     def test_validator_invalid_links(self):
-0031:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃ Р·Р°РїСЂРµС‰РµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё"""
-0032:         validator = YouTubeLinkValidator(fields=['video_link', 'description'])
-0033: 
-0034:         invalid_data = {
-0035:             'video_link': 'https://vk.com/video123',
-0036:             'description': 'Р—Р°РїСЂРµС‰РµРЅРЅР°СЏ СЃСЃС‹Р»РєР°: https://example.com/tutorial'
-0037:         }
-0038: 
-0039:         with self.assertRaises(serializers.ValidationError):
-0040:             validator(invalid_data)
-0041: 
-0042:     def test_validator_mixed_links(self):
-0043:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃРѕ СЃРјРµС€Р°РЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё"""
-0044:         validator = YouTubeLinkValidator(fields=['description'])
-0045: 
-0046:         mixed_data = {
-0047:             'description': 'РҐРѕСЂРѕС€Р°СЏ СЃСЃС‹Р»РєР°: https://youtube.com/watch?v=test, РїР»РѕС…Р°СЏ: https://vk.com/video'
-0048:         }
+0011: 
+0012: class YouTubeValidatorTest(TestCase):
+0013: 
+0014:     def test_validator_valid_youtube_links(self):
+0015:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃ СЂР°Р·СЂРµС€РµРЅРЅС‹РјРё YouTube СЃСЃС‹Р»РєР°РјРё"""
+0016:         validator = YouTubeLinkValidator(fields=["video_link", "description"])
+0017: 
+0018:         valid_data = {
+0019:             "video_link": "https://youtube.com/watch?v=dQw4w9WgXcQ",
+0020:             "description": "РћР±СѓС‡Р°СЋС‰РµРµ РІРёРґРµРѕ: https://youtu.be/test123",
+0021:         }
+0022: 
+0023:         # РќРµ РґРѕР»Р¶РЅРѕ РІС‹Р·С‹РІР°С‚СЊ РёСЃРєР»СЋС‡РµРЅРёР№
+0024:         try:
+0025:             validator(valid_data)
+0026:         except serializers.ValidationError:
+0027:             self.fail("Р’Р°Р»РёРґР°С‚РѕСЂ РѕС‚РІРµСЂРі РІР°Р»РёРґРЅС‹Рµ YouTube СЃСЃС‹Р»РєРё")
+0028: 
+0029:     def test_validator_invalid_links(self):
+0030:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃ Р·Р°РїСЂРµС‰РµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё"""
+0031:         validator = YouTubeLinkValidator(fields=["video_link", "description"])
+0032: 
+0033:         invalid_data = {
+0034:             "video_link": "https://vk.com/video123",
+0035:             "description": "Р—Р°РїСЂРµС‰РµРЅРЅР°СЏ СЃСЃС‹Р»РєР°: https://example.com/tutorial",
+0036:         }
+0037: 
+0038:         with self.assertRaises(serializers.ValidationError):
+0039:             validator(invalid_data)
+0040: 
+0041:     def test_validator_mixed_links(self):
+0042:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃРѕ СЃРјРµС€Р°РЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё"""
+0043:         validator = YouTubeLinkValidator(fields=["description"])
+0044: 
+0045:         mixed_data = {"description": "РҐРѕСЂРѕС€Р°СЏ СЃСЃС‹Р»РєР°: https://youtube.com/watch?v=test, РїР»РѕС…Р°СЏ: https://vk.com/video"}
+0046: 
+0047:         with self.assertRaises(serializers.ValidationError):
+0048:             validator(mixed_data)
 0049: 
-0050:         with self.assertRaises(serializers.ValidationError):
-0051:             validator(mixed_data)
-0052: 
-0053:     def test_validator_empty_fields(self):
-0054:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃ РїСѓСЃС‚С‹РјРё РїРѕР»СЏРјРё"""
-0055:         validator = YouTubeLinkValidator(fields=['video_link', 'description'])
-0056: 
-0057:         empty_data = {
-0058:             'video_link': '',
-0059:             'description': None
-0060:         }
+0050:     def test_validator_empty_fields(self):
+0051:         """РўРµСЃС‚ РІР°Р»РёРґР°С‚РѕСЂР° СЃ РїСѓСЃС‚С‹РјРё РїРѕР»СЏРјРё"""
+0052:         validator = YouTubeLinkValidator(fields=["video_link", "description"])
+0053: 
+0054:         empty_data = {"video_link": "", "description": None}
+0055: 
+0056:         # РќРµ РґРѕР»Р¶РЅРѕ РІС‹Р·С‹РІР°С‚СЊ РёСЃРєР»СЋС‡РµРЅРёР№
+0057:         try:
+0058:             validator(empty_data)
+0059:         except serializers.ValidationError:
+0060:             self.fail("Р’Р°Р»РёРґР°С‚РѕСЂ РЅРµ РґРѕР»Р¶РµРЅ РїР°РґР°С‚СЊ РЅР° РїСѓСЃС‚С‹С… РїРѕР»СЏС…")
 0061: 
-0062:         # РќРµ РґРѕР»Р¶РЅРѕ РІС‹Р·С‹РІР°С‚СЊ РёСЃРєР»СЋС‡РµРЅРёР№
-0063:         try:
-0064:             validator(empty_data)
-0065:         except serializers.ValidationError:
-0066:             self.fail("Р’Р°Р»РёРґР°С‚РѕСЂ РЅРµ РґРѕР»Р¶РµРЅ РїР°РґР°С‚СЊ РЅР° РїСѓСЃС‚С‹С… РїРѕР»СЏС…")
-0067: 
+0062: 
+0063: class LessonSerializerTest(APITestCase):
+0064: 
+0065:     def setUp(self):
+0066:         """РЎРѕР·РґР°РµРј С‚РµСЃС‚РѕРІС‹Р№ РєСѓСЂСЃ РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј"""
+0067:         self.course = Course.objects.create(name="Test Course", description="Test course description")
 0068: 
-0069: class LessonSerializerTest(APITestCase):
-0070: 
-0071:     def setUp(self):
-0072:         """РЎРѕР·РґР°РµРј С‚РµСЃС‚РѕРІС‹Р№ РєСѓСЂСЃ РїРµСЂРµРґ РєР°Р¶РґС‹Рј С‚РµСЃС‚РѕРј"""
-0073:         self.course = Course.objects.create(
-0074:             name='Test Course',
-0075:             description='Test course description'
-0076:         )
+0069:     def test_lesson_serializer_valid_video_link(self):
+0070:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° СЃ РІР°Р»РёРґРЅРѕР№ YouTube СЃСЃС‹Р»РєРѕР№"""
+0071:         data = {
+0072:             "name": "Test Lesson",
+0073:             "description": "Lesson with YouTube video",
+0074:             "video_link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+0075:             "course": self.course.id,  # РСЃРїРѕР»СЊР·СѓРµРј ID СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ РєСѓСЂСЃР°
+0076:         }
 0077: 
-0078:     def test_lesson_serializer_valid_video_link(self):
-0079:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° СЃ РІР°Р»РёРґРЅРѕР№ YouTube СЃСЃС‹Р»РєРѕР№"""
-0080:         data = {
-0081:             'name': 'Test Lesson',
-0082:             'description': 'Lesson with YouTube video',
-0083:             'video_link': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-0084:             'course': self.course.id  # РСЃРїРѕР»СЊР·СѓРµРј ID СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ РєСѓСЂСЃР°
-0085:         }
-0086: 
-0087:         serializer = LessonSerializer(data=data)
-0088:         self.assertTrue(serializer.is_valid(), serializer.errors)
+0078:         serializer = LessonSerializer(data=data)
+0079:         self.assertTrue(serializer.is_valid(), serializer.errors)
+0080: 
+0081:     def test_lesson_serializer_invalid_video_link(self):
+0082:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° СЃ РЅРµРІР°Р»РёРґРЅРѕР№ СЃСЃС‹Р»РєРѕР№"""
+0083:         data = {
+0084:             "name": "Test Lesson",
+0085:             "description": "Lesson with invalid video",
+0086:             "video_link": "https://vk.com/video123",
+0087:             "course": self.course.id,
+0088:         }
 0089: 
-0090:     def test_lesson_serializer_invalid_video_link(self):
-0091:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° СЃ РЅРµРІР°Р»РёРґРЅРѕР№ СЃСЃС‹Р»РєРѕР№"""
-0092:         data = {
-0093:             'name': 'Test Lesson',
-0094:             'description': 'Lesson with invalid video',
-0095:             'video_link': 'https://vk.com/video123',
-0096:             'course': self.course.id
-0097:         }
-0098: 
-0099:         serializer = LessonSerializer(data=data)
-0100:         self.assertFalse(serializer.is_valid())
-0101:         self.assertIn('video_link', serializer.errors)
+0090:         serializer = LessonSerializer(data=data)
+0091:         self.assertFalse(serializer.is_valid())
+0092:         self.assertIn("video_link", serializer.errors)
+0093: 
+0094:     def test_lesson_serializer_invalid_description_links(self):
+0095:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° СЃ Р·Р°РїСЂРµС‰РµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё РІ РѕРїРёСЃР°РЅРёРё"""
+0096:         data = {
+0097:             "name": "Test Lesson",
+0098:             "description": "РЎРјРѕС‚СЂРёС‚Рµ С‚Р°РєР¶Рµ: https://coursera.org/learn/python",
+0099:             "video_link": "https://youtube.com/watch?v=test",
+0100:             "course": self.course.id,
+0101:         }
 0102: 
-0103:     def test_lesson_serializer_invalid_description_links(self):
-0104:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° СЃ Р·Р°РїСЂРµС‰РµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё РІ РѕРїРёСЃР°РЅРёРё"""
-0105:         data = {
-0106:             'name': 'Test Lesson',
-0107:             'description': 'РЎРјРѕС‚СЂРёС‚Рµ С‚Р°РєР¶Рµ: https://coursera.org/learn/python',
-0108:             'video_link': 'https://youtube.com/watch?v=test',
-0109:             'course': self.course.id
-0110:         }
-0111: 
-0112:         serializer = LessonSerializer(data=data)
-0113:         self.assertFalse(serializer.is_valid())
-0114:         self.assertIn('description', serializer.errors)
+0103:         serializer = LessonSerializer(data=data)
+0104:         self.assertFalse(serializer.is_valid())
+0105:         self.assertIn("description", serializer.errors)
+0106: 
+0107:     def test_lesson_serializer_no_video_link(self):
+0108:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° Р±РµР· РІРёРґРµРѕ СЃСЃС‹Р»РєРё"""
+0109:         data = {
+0110:             "name": "Test Lesson",
+0111:             "description": "Lesson without video",
+0112:             "video_link": "",  # РџСѓСЃС‚Р°СЏ СЃСЃС‹Р»РєР°
+0113:             "course": self.course.id,
+0114:         }
 0115: 
-0116:     def test_lesson_serializer_no_video_link(self):
-0117:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° СѓСЂРѕРєР° Р±РµР· РІРёРґРµРѕ СЃСЃС‹Р»РєРё"""
-0118:         data = {
-0119:             'name': 'Test Lesson',
-0120:             'description': 'Lesson without video',
-0121:             'video_link': '',  # РџСѓСЃС‚Р°СЏ СЃСЃС‹Р»РєР°
-0122:             'course': self.course.id
-0123:         }
-0124: 
-0125:         serializer = LessonSerializer(data=data)
-0126:         self.assertTrue(serializer.is_valid(), serializer.errors)
-0127: 
+0116:         serializer = LessonSerializer(data=data)
+0117:         self.assertTrue(serializer.is_valid(), serializer.errors)
+0118: 
+0119: 
+0120: class CourseSerializerTest(APITestCase):
+0121: 
+0122:     def test_course_serializer_valid_description(self):
+0123:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° РєСѓСЂСЃР° СЃ РІР°Р»РёРґРЅС‹Рј РѕРїРёСЃР°РЅРёРµРј"""
+0124:         data = {"name": "Test Course", "description": "РљСѓСЂСЃ СЃ YouTube СЃСЃС‹Р»РєР°РјРё: https://youtu.be/test123"}
+0125: 
+0126:         serializer = CourseSerializer(data=data)
+0127:         self.assertTrue(serializer.is_valid(), serializer.errors)
 0128: 
-0129: class CourseSerializerTest(APITestCase):
-0130: 
-0131:     def test_course_serializer_valid_description(self):
-0132:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° РєСѓСЂСЃР° СЃ РІР°Р»РёРґРЅС‹Рј РѕРїРёСЃР°РЅРёРµРј"""
-0133:         data = {
-0134:             'name': 'Test Course',
-0135:             'description': 'РљСѓСЂСЃ СЃ YouTube СЃСЃС‹Р»РєР°РјРё: https://youtu.be/test123'
-0136:         }
-0137: 
-0138:         serializer = CourseSerializer(data=data)
-0139:         self.assertTrue(serializer.is_valid(), serializer.errors)
+0129:     def test_course_serializer_invalid_description(self):
+0130:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° РєСѓСЂСЃР° СЃ Р·Р°РїСЂРµС‰РµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё РІ РѕРїРёСЃР°РЅРёРё"""
+0131:         data = {"name": "Test Course", "description": "РџРѕСЃРµС‚РёС‚Рµ РЅР°С€ СЃР°Р№С‚: https://example.com"}
+0132: 
+0133:         serializer = CourseSerializer(data=data)
+0134:         self.assertFalse(serializer.is_valid())
+0135:         self.assertIn("description", serializer.errors)
+0136: 
+0137:     def test_course_serializer_no_links(self):
+0138:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° РєСѓСЂСЃР° Р±РµР· СЃСЃС‹Р»РѕРє"""
+0139:         data = {"name": "Test Course", "description": "РџСЂРѕСЃС‚Рѕ РѕРїРёСЃР°РЅРёРµ Р±РµР· СЃСЃС‹Р»РѕРє"}
 0140: 
-0141:     def test_course_serializer_invalid_description(self):
-0142:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° РєСѓСЂСЃР° СЃ Р·Р°РїСЂРµС‰РµРЅРЅС‹РјРё СЃСЃС‹Р»РєР°РјРё РІ РѕРїРёСЃР°РЅРёРё"""
-0143:         data = {
-0144:             'name': 'Test Course',
-0145:             'description': 'РџРѕСЃРµС‚РёС‚Рµ РЅР°С€ СЃР°Р№С‚: https://example.com'
-0146:         }
-0147: 
-0148:         serializer = CourseSerializer(data=data)
-0149:         self.assertFalse(serializer.is_valid())
-0150:         self.assertIn('description', serializer.errors)
-0151: 
-0152:     def test_course_serializer_no_links(self):
-0153:         """РўРµСЃС‚ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂР° РєСѓСЂСЃР° Р±РµР· СЃСЃС‹Р»РѕРє"""
-0154:         data = {
-0155:             'name': 'Test Course',
-0156:             'description': 'РџСЂРѕСЃС‚Рѕ РѕРїРёСЃР°РЅРёРµ Р±РµР· СЃСЃС‹Р»РѕРє'
-0157:         }
-0158: 
-0159:         serializer = CourseSerializer(data=data)
-0160:         self.assertTrue(serializer.is_valid(), serializer.errors)
-0161: 
-0162: 
-0163: class SubscriptionAPITest(APITestCase):
+0141:         serializer = CourseSerializer(data=data)
+0142:         self.assertTrue(serializer.is_valid(), serializer.errors)
+0143: 
+0144: 
+0145: class SubscriptionAPITest(APITestCase):
+0146: 
+0147:     def setUp(self):
+0148:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РєСѓСЂСЃ
+0149:         from django.contrib.auth import get_user_model
+0150: 
+0151:         User = get_user_model()
+0152: 
+0153:         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+0154: 
+0155:         self.course = Course.objects.create(name="Test Course", description="Test course description")
+0156: 
+0157:         self.client.force_authenticate(user=self.user)
+0158:         self.subscription_url = reverse("lms:subscription")
+0159: 
+0160:     def test_add_subscription(self):
+0161:         """РўРµСЃС‚ РґРѕР±Р°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
+0162:         data = {"course_id": self.course.id}
+0163:         response = self.client.post(self.subscription_url, data)
 0164: 
-0165:     def setUp(self):
-0166:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РєСѓСЂСЃ
-0167:         from django.contrib.auth import get_user_model
-0168:         User = get_user_model()
-0169: 
-0170:         self.user = User.objects.create_user(
-0171:             username='testuser',
-0172:             email='test@example.com',
-0173:             password='testpass123'
-0174:         )
-0175: 
-0176:         self.course = Course.objects.create(
-0177:             name='Test Course',
-0178:             description='Test course description'
-0179:         )
+0165:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0166:         self.assertEqual(response.data["message"], "РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°")
+0167:         self.assertTrue(Subscription.objects.filter(user=self.user, course=self.course).exists())
+0168: 
+0169:     def test_remove_subscription(self):
+0170:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
+0171:         # РЎРЅР°С‡Р°Р»Р° РґРѕР±Р°РІР»СЏРµРј РїРѕРґРїРёСЃРєСѓ
+0172:         Subscription.objects.create(user=self.user, course=self.course)
+0173: 
+0174:         data = {"course_id": self.course.id}
+0175:         response = self.client.post(self.subscription_url, data)
+0176: 
+0177:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0178:         self.assertEqual(response.data["message"], "РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°")
+0179:         self.assertFalse(Subscription.objects.filter(user=self.user, course=self.course).exists())
 0180: 
-0181:         self.client.force_authenticate(user=self.user)
-0182:         self.subscription_url = reverse('lms:subscription')
-0183: 
-0184:     def test_add_subscription(self):
-0185:         """РўРµСЃС‚ РґРѕР±Р°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
-0186:         data = {'course_id': self.course.id}
-0187:         response = self.client.post(self.subscription_url, data)
-0188: 
-0189:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0190:         self.assertEqual(response.data['message'], 'РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°')
-0191:         self.assertTrue(Subscription.objects.filter(user=self.user, course=self.course).exists())
+0181:     def test_subscription_without_course_id(self):
+0182:         """РўРµСЃС‚ Р±РµР· course_id"""
+0183:         response = self.client.post(self.subscription_url, {})
+0184: 
+0185:         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+0186:         self.assertIn("error", response.data)
+0187: 
+0188:     def test_subscription_nonexistent_course(self):
+0189:         """РўРµСЃС‚ СЃ РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРј РєСѓСЂСЃРѕРј"""
+0190:         data = {"course_id": 999}
+0191:         response = self.client.post(self.subscription_url, data)
 0192: 
-0193:     def test_remove_subscription(self):
-0194:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
-0195:         # РЎРЅР°С‡Р°Р»Р° РґРѕР±Р°РІР»СЏРµРј РїРѕРґРїРёСЃРєСѓ
-0196:         Subscription.objects.create(user=self.user, course=self.course)
-0197: 
-0198:         data = {'course_id': self.course.id}
-0199:         response = self.client.post(self.subscription_url, data)
+0193:         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+0194: 
+0195:     def test_is_subscribed_field_in_course(self):
+0196:         """РўРµСЃС‚ РїРѕР»СЏ is_subscribed РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂРµ РєСѓСЂСЃР°"""
+0197:         # Р—Р°РїСЂРѕСЃ РєСѓСЂСЃР° Р±РµР· РїРѕРґРїРёСЃРєРё
+0198:         url = reverse("courses:course-detail", args=[self.course.id])  # в†ђ РСЃРїСЂР°РІР»РµРЅРѕ!
+0199:         response = self.client.get(url)
 0200: 
 0201:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0202:         self.assertEqual(response.data['message'], 'РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°')
-0203:         self.assertFalse(Subscription.objects.filter(user=self.user, course=self.course).exists())
-0204: 
-0205:     def test_subscription_without_course_id(self):
-0206:         """РўРµСЃС‚ Р±РµР· course_id"""
-0207:         response = self.client.post(self.subscription_url, {})
-0208: 
-0209:         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-0210:         self.assertIn('error', response.data)
+0202:         self.assertFalse(response.data["is_subscribed"])
+0203: 
+0204:         # Р”РѕР±Р°РІР»СЏРµРј РїРѕРґРїРёСЃРєСѓ
+0205:         Subscription.objects.create(user=self.user, course=self.course)
+0206: 
+0207:         # РЎРЅРѕРІР° Р·Р°РїСЂР°С€РёРІР°РµРј РєСѓСЂСЃ
+0208:         response = self.client.get(url)
+0209:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0210:         self.assertTrue(response.data["is_subscribed"])
 0211: 
-0212:     def test_subscription_nonexistent_course(self):
-0213:         """РўРµСЃС‚ СЃ РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРј РєСѓСЂСЃРѕРј"""
-0214:         data = {'course_id': 999}
-0215:         response = self.client.post(self.subscription_url, data)
-0216: 
-0217:         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-0218: 
-0219:     def test_is_subscribed_field_in_course(self):
-0220:         """РўРµСЃС‚ РїРѕР»СЏ is_subscribed РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂРµ РєСѓСЂСЃР°"""
-0221:         # Р—Р°РїСЂРѕСЃ РєСѓСЂСЃР° Р±РµР· РїРѕРґРїРёСЃРєРё
-0222:         url = reverse('courses:course-detail', args=[self.course.id])  # в†ђ РСЃРїСЂР°РІР»РµРЅРѕ!
-0223:         response = self.client.get(url)
-0224: 
-0225:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0226:         self.assertFalse(response.data['is_subscribed'])
-0227: 
-0228:         # Р”РѕР±Р°РІР»СЏРµРј РїРѕРґРїРёСЃРєСѓ
-0229:         Subscription.objects.create(user=self.user, course=self.course)
-0230: 
-0231:         # РЎРЅРѕРІР° Р·Р°РїСЂР°С€РёРІР°РµРј РєСѓСЂСЃ
-0232:         response = self.client.get(url)
-0233:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0234:         self.assertTrue(response.data['is_subscribed'])
+0212: 
+0213: class PaginationTest(APITestCase):
+0214: 
+0215:     def setUp(self):
+0216:         from django.contrib.auth import get_user_model
+0217: 
+0218:         User = get_user_model()
+0219: 
+0220:         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+0221: 
+0222:         # РЎРѕР·РґР°РµРј С‚РµСЃС‚РѕРІС‹Рµ РґР°РЅРЅС‹Рµ
+0223:         for i in range(15):
+0224:             Course.objects.create(name=f"Test Course {i}", description=f"Test course description {i}")
+0225: 
+0226:         course = Course.objects.first()
+0227:         for i in range(100):
+0228:             Lesson.objects.create(name=f"Test Lesson {i}", description=f"Test lesson description {i}", course=course)
+0229: 
+0230:         self.client.force_authenticate(user=self.user)
+0231: 
+0232:         # РСЃРїРѕР»СЊР·СѓРµРј СЂРµР°Р»СЊРЅС‹Рµ URL РёР· РґРµР±Р°РіР°
+0233:         self.courses_url = "/courses/courses/"
+0234:         self.lessons_url = "/lessons/lessons_list/"
 0235: 
-0236: 
-0237: class PaginationTest(APITestCase):
-0238: 
-0239:     def setUp(self):
-0240:         from django.contrib.auth import get_user_model
-0241:         User = get_user_model()
-0242: 
-0243:         self.user = User.objects.create_user(
-0244:             username='testuser',
-0245:             email='test@example.com',
-0246:             password='testpass123'
-0247:         )
-0248: 
-0249:         # РЎРѕР·РґР°РµРј С‚РµСЃС‚РѕРІС‹Рµ РґР°РЅРЅС‹Рµ
-0250:         for i in range(15):
-0251:             Course.objects.create(
-0252:                 name=f'Test Course {i}',
-0253:                 description=f'Test course description {i}'
-0254:             )
-0255: 
-0256:         course = Course.objects.first()
-0257:         for i in range(100):
-0258:             Lesson.objects.create(
-0259:                 name=f'Test Lesson {i}',
-0260:                 description=f'Test lesson description {i}',
-0261:                 course=course
-0262:             )
-0263: 
-0264:         self.client.force_authenticate(user=self.user)
-0265: 
-0266:         # РСЃРїРѕР»СЊР·СѓРµРј СЂРµР°Р»СЊРЅС‹Рµ URL РёР· РґРµР±Р°РіР°
-0267:         self.courses_url = '/courses/courses/'
-0268:         self.lessons_url = '/lessons/lessons_list/'
+0236:     def test_lesson_pagination_default(self):
+0237:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё СѓСЂРѕРєРѕРІ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
+0238:         response = self.client.get(self.lessons_url)
+0239:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0240:         self.assertIn("results", response.data)
+0241:         self.assertEqual(len(response.data["results"]), 5)  # page_size = 5
+0242:         self.assertIn("count", response.data)
+0243:         self.assertIn("next", response.data)
+0244:         self.assertIn("previous", response.data)
+0245: 
+0246:     def test_lesson_pagination_custom_size(self):
+0247:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё СѓСЂРѕРєРѕРІ СЃ РєР°СЃС‚РѕРјРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
+0248:         response = self.client.get(f"{self.lessons_url}?page_size=5")
+0249:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0250:         self.assertEqual(len(response.data["results"]), 5)
+0251: 
+0252:     def test_lesson_pagination_max_size(self):
+0253:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё СѓСЂРѕРєРѕРІ СЃ РјР°РєСЃРёРјР°Р»СЊРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
+0254:         response = self.client.get(f"{self.lessons_url}?page_size=100")
+0255:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0256:         # РћР¶РёРґР°РµРј РЅРµ Р±РѕР»РµРµ 50 СЌР»РµРјРµРЅС‚РѕРІ (max_page_size)
+0257:         expected_count = min(50, Lesson.objects.count())
+0258:         self.assertEqual(len(response.data["results"]), expected_count)
+0259: 
+0260:     def test_course_pagination_default(self):
+0261:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
+0262:         response = self.client.get(self.courses_url)
+0263:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0264:         self.assertIn("results", response.data)
+0265:         self.assertEqual(len(response.data["results"]), 2)  # page_size = 5
+0266:         self.assertIn("count", response.data)
+0267:         self.assertIn("next", response.data)
+0268:         self.assertIn("previous", response.data)
 0269: 
-0270:     def test_lesson_pagination_default(self):
-0271:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё СѓСЂРѕРєРѕРІ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
-0272:         response = self.client.get(self.lessons_url)
+0270:     def test_course_pagination_custom_size(self):
+0271:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РєР°СЃС‚РѕРјРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
+0272:         response = self.client.get(f"{self.courses_url}?page_size=3")
 0273:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0274:         self.assertIn('results', response.data)
-0275:         self.assertEqual(len(response.data['results']), 5)  # page_size = 5
-0276:         self.assertIn('count', response.data)
-0277:         self.assertIn('next', response.data)
-0278:         self.assertIn('previous', response.data)
-0279: 
-0280:     def test_lesson_pagination_custom_size(self):
-0281:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё СѓСЂРѕРєРѕРІ СЃ РєР°СЃС‚РѕРјРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
-0282:         response = self.client.get(f'{self.lessons_url}?page_size=5')
-0283:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0284:         self.assertEqual(len(response.data['results']), 5)
-0285: 
-0286:     def test_lesson_pagination_max_size(self):
-0287:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё СѓСЂРѕРєРѕРІ СЃ РјР°РєСЃРёРјР°Р»СЊРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
-0288:         response = self.client.get(f'{self.lessons_url}?page_size=100')
-0289:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0290:         # РћР¶РёРґР°РµРј РЅРµ Р±РѕР»РµРµ 50 СЌР»РµРјРµРЅС‚РѕРІ (max_page_size)
-0291:         expected_count = min(50, Lesson.objects.count())
-0292:         self.assertEqual(len(response.data['results']), expected_count)
-0293: 
-0294:     def test_course_pagination_default(self):
-0295:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
-0296:         response = self.client.get(self.courses_url)
-0297:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0298:         self.assertIn('results', response.data)
-0299:         self.assertEqual(len(response.data['results']), 2)  # page_size = 5
-0300:         self.assertIn('count', response.data)
-0301:         self.assertIn('next', response.data)
-0302:         self.assertIn('previous', response.data)
-0303: 
-0304:     def test_course_pagination_custom_size(self):
-0305:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РєР°СЃС‚РѕРјРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
-0306:         response = self.client.get(f'{self.courses_url}?page_size=3')
-0307:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0308:         self.assertEqual(len(response.data['results']), 3)
-0309: 
-0310:     def test_course_pagination_max_size(self):
-0311:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РјР°РєСЃРёРјР°Р»СЊРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
-0312:         response = self.client.get(f'{self.courses_url}?page_size=30')
-0313:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0314:         # РћР¶РёРґР°РµРј РЅРµ Р±РѕР»РµРµ 20 СЌР»РµРјРµРЅС‚РѕРІ (max_page_size)
-0315:         expected_count = min(20, Course.objects.count())
-0316:         self.assertEqual(len(response.data['results']), expected_count)
-0317: 
-0318: 
-0319: 
-0320: 
-0321: 
+0274:         self.assertEqual(len(response.data["results"]), 3)
+0275: 
+0276:     def test_course_pagination_max_size(self):
+0277:         """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РјР°РєСЃРёРјР°Р»СЊРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
+0278:         response = self.client.get(f"{self.courses_url}?page_size=30")
+0279:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0280:         # РћР¶РёРґР°РµРј РЅРµ Р±РѕР»РµРµ 20 СЌР»РµРјРµРЅС‚РѕРІ (max_page_size)
+0281:         expected_count = min(20, Course.objects.count())
+0282:         self.assertEqual(len(response.data["results"]), expected_count)
+0283: 
+0284:     # def test_course_pagination_default(self):
+0285:     #     """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
+0286:     #     response = self.client.get('/courses/')
+0287:     #
+0288:     #     # Р•СЃР»Рё 404, РїСЂРѕРІРµСЂСЏРµРј Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ URL
+0289:     #     if response.status_code == 404:
+0290:     #         response = self.client.get('/lms/courses/')  # РџРѕРїСЂРѕР±СѓРµРј РґСЂСѓРіРѕР№ РїСЂРµС„РёРєСЃ
+0291:     #
+0292:     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+0293:     #     self.assertIn('results', response.data)
+0294:     #     self.assertEqual(len(response.data['results']), 5)  # page_size = 5
+0295:     #     self.assertIn('count', response.data)
+0296:     #     self.assertIn('next', response.data)
+0297:     #     self.assertIn('previous', response.data)
+0298:     #
+0299:     # def test_course_pagination_custom_size(self):
+0300:     #     """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РєР°СЃС‚РѕРјРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
+0301:     #     response = self.client.get('/courses/?page_size=3')
+0302:     #
+0303:     #     # Р•СЃР»Рё 404, РїСЂРѕРІРµСЂСЏРµРј Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ URL
+0304:     #     if response.status_code == 404:
+0305:     #         response = self.client.get('/lms/courses/?page_size=3')
+0306:     #
+0307:     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+0308:     #     self.assertEqual(len(response.data['results']), 3)
+0309:     #
+0310:     # def test_course_pagination_max_size(self):
+0311:     #     """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РјР°РєСЃРёРјР°Р»СЊРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
+0312:     #     response = self.client.get('/courses/?page_size=30')
+0313:     #
+0314:     #     # Р•СЃР»Рё 404, РїСЂРѕРІРµСЂСЏРµРј Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ URL
+0315:     #     if response.status_code == 404:
+0316:     #         response = self.client.get('/lms/courses/?page_size=30')
+0317:     #
+0318:     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+0319:     #     # РћР¶РёРґР°РµРј РЅРµ Р±РѕР»РµРµ 20 СЌР»РµРјРµРЅС‚РѕРІ (max_page_size), РЅРѕ РЅРµ Р±РѕР»РµРµ РѕР±С‰РµРіРѕ РєРѕР»РёС‡РµСЃС‚РІР°
+0320:     #     expected_count = min(20, Course.objects.count())
+0321:     #     self.assertEqual(len(response.data['results']), expected_count)
 0322: 
 0323: 
-0324: 
-0325:     # def test_course_pagination_default(self):
-0326:     #     """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
-0327:     #     response = self.client.get('/courses/')
-0328:     #
-0329:     #     # Р•СЃР»Рё 404, РїСЂРѕРІРµСЂСЏРµРј Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ URL
-0330:     #     if response.status_code == 404:
-0331:     #         response = self.client.get('/lms/courses/')  # РџРѕРїСЂРѕР±СѓРµРј РґСЂСѓРіРѕР№ РїСЂРµС„РёРєСЃ
-0332:     #
-0333:     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-0334:     #     self.assertIn('results', response.data)
-0335:     #     self.assertEqual(len(response.data['results']), 5)  # page_size = 5
-0336:     #     self.assertIn('count', response.data)
-0337:     #     self.assertIn('next', response.data)
-0338:     #     self.assertIn('previous', response.data)
-0339:     #
-0340:     # def test_course_pagination_custom_size(self):
-0341:     #     """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РєР°СЃС‚РѕРјРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
-0342:     #     response = self.client.get('/courses/?page_size=3')
-0343:     #
-0344:     #     # Р•СЃР»Рё 404, РїСЂРѕРІРµСЂСЏРµРј Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ URL
-0345:     #     if response.status_code == 404:
-0346:     #         response = self.client.get('/lms/courses/?page_size=3')
-0347:     #
-0348:     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-0349:     #     self.assertEqual(len(response.data['results']), 3)
-0350:     #
-0351:     # def test_course_pagination_max_size(self):
-0352:     #     """РўРµСЃС‚ РїР°РіРёРЅР°С†РёРё РєСѓСЂСЃРѕРІ СЃ РјР°РєСЃРёРјР°Р»СЊРЅС‹Рј СЂР°Р·РјРµСЂРѕРј"""
-0353:     #     response = self.client.get('/courses/?page_size=30')
-0354:     #
-0355:     #     # Р•СЃР»Рё 404, РїСЂРѕРІРµСЂСЏРµРј Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ URL
-0356:     #     if response.status_code == 404:
-0357:     #         response = self.client.get('/lms/courses/?page_size=30')
-0358:     #
-0359:     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-0360:     #     # РћР¶РёРґР°РµРј РЅРµ Р±РѕР»РµРµ 20 СЌР»РµРјРµРЅС‚РѕРІ (max_page_size), РЅРѕ РЅРµ Р±РѕР»РµРµ РѕР±С‰РµРіРѕ РєРѕР»РёС‡РµСЃС‚РІР°
-0361:     #     expected_count = min(20, Course.objects.count())
-0362:     #     self.assertEqual(len(response.data['results']), expected_count)
-0363: 
-0364: # class URLDebugTest(APITestCase):
-0365: #
-0366: #     def setUp(self):
-0367: #         from django.contrib.auth import get_user_model
-0368: #         User = get_user_model()
-0369: #         self.user = User.objects.create_user(username='test', password='test')
-0370: #         self.client.force_authenticate(user=self.user)
-0371: #
-0372: #     def test_debug_all_urls(self):
-0373: #         """РўРµСЃС‚ РґР»СЏ РѕС‚Р»Р°РґРєРё РІСЃРµС… РґРѕСЃС‚СѓРїРЅС‹С… URL"""
-0374: #         print("\n=== Р”РћРЎРўРЈРџРќР«Р• URL ===")
-0375: #
-0376: #         # РџСЂРѕРІРµСЂСЏРµРј РІРѕР·РјРѕР¶РЅС‹Рµ URL РґР»СЏ РєСѓСЂСЃРѕРІ
-0377: #         test_urls = [
-0378: #             '/courses/',
-0379: #             '/lms/courses/',
-0380: #             '/courses/courses/',
-0381: #             '/lessons/courses/',
-0382: #             '/api/courses/',
-0383: #         ]
-0384: #
-0385: #         for url in test_urls:
-0386: #             response = self.client.get(url)
-0387: #             print(f"{url} -> {response.status_code}")
-0388: #             if response.status_code == 200:
-0389: #                 print(
-0390: #                     f"  Р”Р°РЅРЅС‹Рµ: {list(response.data.keys()) if hasattr(response.data, 'keys') else response.data}")
-0391: #
-0392: #         # РџСЂРѕРІРµСЂСЏРµРј URL РґР»СЏ СѓСЂРѕРєРѕРІ
-0393: #         print("\n=== URL РЈР РћРљРћР’ ===")
-0394: #         lesson_urls = [
-0395: #             '/lessons/lessons_list/',
-0396: #             '/lms/lessons/',
-0397: #             '/courses/lessons/',
-0398: #             '/api/lessons/',
-0399: #         ]
-0400: #
-0401: #         for url in lesson_urls:
-0402: #             response = self.client.get(url)
-0403: #             print(f"{url} -> {response.status_code}")
+0324: # class URLDebugTest(APITestCase):
+0325: #
+0326: #     def setUp(self):
+0327: #         from django.contrib.auth import get_user_model
+0328: #         User = get_user_model()
+0329: #         self.user = User.objects.create_user(username='test', password='test')
+0330: #         self.client.force_authenticate(user=self.user)
+0331: #
+0332: #     def test_debug_all_urls(self):
+0333: #         """РўРµСЃС‚ РґР»СЏ РѕС‚Р»Р°РґРєРё РІСЃРµС… РґРѕСЃС‚СѓРїРЅС‹С… URL"""
+0334: #         print("\n=== Р”РћРЎРўРЈРџРќР«Р• URL ===")
+0335: #
+0336: #         # РџСЂРѕРІРµСЂСЏРµРј РІРѕР·РјРѕР¶РЅС‹Рµ URL РґР»СЏ РєСѓСЂСЃРѕРІ
+0337: #         test_urls = [
+0338: #             '/courses/',
+0339: #             '/lms/courses/',
+0340: #             '/courses/courses/',
+0341: #             '/lessons/courses/',
+0342: #             '/api/courses/',
+0343: #         ]
+0344: #
+0345: #         for url in test_urls:
+0346: #             response = self.client.get(url)
+0347: #             print(f"{url} -> {response.status_code}")
+0348: #             if response.status_code == 200:
+0349: #                 print(
+0350: #                     f"  Р”Р°РЅРЅС‹Рµ: {list(response.data.keys()) if hasattr(response.data, 'keys') else response.data}")
+0351: #
+0352: #         # РџСЂРѕРІРµСЂСЏРµРј URL РґР»СЏ СѓСЂРѕРєРѕРІ
+0353: #         print("\n=== URL РЈР РћРљРћР’ ===")
+0354: #         lesson_urls = [
+0355: #             '/lessons/lessons_list/',
+0356: #             '/lms/lessons/',
+0357: #             '/courses/lessons/',
+0358: #             '/api/lessons/',
+0359: #         ]
+0360: #
+0361: #         for url in lesson_urls:
+0362: #             response = self.client.get(url)
+0363: #             print(f"{url} -> {response.status_code}")
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\tests_comprehensive.py
 ================================================================================
-0001: from rest_framework import status
-0002: from rest_framework.test import APITestCase
-0003: from django.contrib.auth import get_user_model
-0004: from django.urls import reverse
+0001: from django.contrib.auth import get_user_model
+0002: from django.urls import reverse
+0003: from rest_framework import status
+0004: from rest_framework.test import APITestCase
 0005: 
 0006: from lms.models import Course, Lesson, Subscription
 0007: from users.models import User
@@ -1176,290 +1245,250 @@
 0015:     def setUp(self):
 0016:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃ СЂР°Р·РЅС‹РјРё СЂРѕР»СЏРјРё
 0017:         self.user = User.objects.create_user(
-0018:             username='test_user',
-0019:             email='user@example.com',
-0020:             password='testpass123',
-0021:             role='user'
-0022:         )
-0023: 
-0024:         self.moderator = User.objects.create_user(
-0025:             username='test_moderator',
-0026:             email='moderator@example.com',
-0027:             password='testpass123',
-0028:             role='moderator'
-0029:         )
-0030: 
-0031:         self.manager = User.objects.create_user(
-0032:             username='test_manager',
-0033:             email='manager@example.com',
-0034:             password='testpass123',
-0035:             role='manager'
-0036:         )
-0037: 
-0038:         # РЎРѕР·РґР°РµРј РєСѓСЂСЃ
-0039:         self.course = Course.objects.create(
-0040:             name='Test Course',
-0041:             description='Test Course Description',
-0042:             owner=self.user  # Р’Р»Р°РґРµР»РµС† - РѕР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
-0043:         )
-0044: 
-0045:         # РЎРѕР·РґР°РµРј СѓСЂРѕРє
-0046:         self.lesson = Lesson.objects.create(
-0047:             name='Test Lesson',
-0048:             description='Test Lesson Description',
-0049:             course=self.course,
-0050:             owner=self.user  # Р’Р»Р°РґРµР»РµС† - РѕР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
-0051:         )
-0052: 
-0053:         # URL РґР»СЏ СѓСЂРѕРєРѕРІ
-0054:         self.lesson_list_url = reverse('lessons:lessons_list')
-0055:         self.lesson_detail_url = reverse('lessons:lesson', args=[self.lesson.id])
-0056:         self.lesson_create_url = reverse('lessons:lesson-create')
-0057:         self.lesson_update_url = reverse('lessons:lesson-update', args=[self.lesson.id])
-0058:         self.lesson_delete_url = reverse('lessons:lesson-delete', args=[self.lesson.id])
-0059: 
-0060:     def test_lesson_list_authenticated(self):
-0061:         """РўРµСЃС‚ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СѓСЂРѕРєРѕРІ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
-0062:         self.client.force_authenticate(user=self.user)
-0063:         response = self.client.get(self.lesson_list_url)
-0064:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0065:         self.assertIn('results', response.data)
-0066: 
-0067:     def test_lesson_list_unauthenticated(self):
-0068:         """РўРµСЃС‚ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СѓСЂРѕРєРѕРІ РЅРµР°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
-0069:         response = self.client.get(self.lesson_list_url)
-0070:         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-0071: 
-0072:     def test_lesson_detail_authenticated(self):
-0073:         """РўРµСЃС‚ РїРѕР»СѓС‡РµРЅРёСЏ РґРµС‚Р°Р»РµР№ СѓСЂРѕРєР° Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
-0074:         self.client.force_authenticate(user=self.user)
-0075:         response = self.client.get(self.lesson_detail_url)
-0076:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0077:         self.assertEqual(response.data['name'], 'Test Lesson')
-0078: 
-0079:     def test_lesson_create_by_user(self):
-0080:         """РўРµСЃС‚ СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРєР° РѕР±С‹С‡РЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
-0081:         self.client.force_authenticate(user=self.user)
-0082:         data = {
-0083:             'name': 'New Lesson',
-0084:             'description': 'New Lesson Description',
-0085:             'course': self.course.id,
-0086:             'video_link': 'https://youtube.com/watch?v=test'
-0087:         }
-0088:         response = self.client.post(self.lesson_create_url, data)
-0089:         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-0090:         self.assertEqual(Lesson.objects.count(), 2)
+0018:             username="test_user", email="user@example.com", password="testpass123", role="user"
+0019:         )
+0020: 
+0021:         self.moderator = User.objects.create_user(
+0022:             username="test_moderator", email="moderator@example.com", password="testpass123", role="moderator"
+0023:         )
+0024: 
+0025:         self.manager = User.objects.create_user(
+0026:             username="test_manager", email="manager@example.com", password="testpass123", role="manager"
+0027:         )
+0028: 
+0029:         # РЎРѕР·РґР°РµРј РєСѓСЂСЃ
+0030:         self.course = Course.objects.create(
+0031:             name="Test Course",
+0032:             description="Test Course Description",
+0033:             owner=self.user,  # Р’Р»Р°РґРµР»РµС† - РѕР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
+0034:         )
+0035: 
+0036:         # РЎРѕР·РґР°РµРј СѓСЂРѕРє
+0037:         self.lesson = Lesson.objects.create(
+0038:             name="Test Lesson",
+0039:             description="Test Lesson Description",
+0040:             course=self.course,
+0041:             owner=self.user,  # Р’Р»Р°РґРµР»РµС† - РѕР±С‹С‡РЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
+0042:         )
+0043: 
+0044:         # URL РґР»СЏ СѓСЂРѕРєРѕРІ
+0045:         self.lesson_list_url = reverse("lessons:lessons_list")
+0046:         self.lesson_detail_url = reverse("lessons:lesson", args=[self.lesson.id])
+0047:         self.lesson_create_url = reverse("lessons:lesson-create")
+0048:         self.lesson_update_url = reverse("lessons:lesson-update", args=[self.lesson.id])
+0049:         self.lesson_delete_url = reverse("lessons:lesson-delete", args=[self.lesson.id])
+0050: 
+0051:     def test_lesson_list_authenticated(self):
+0052:         """РўРµСЃС‚ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СѓСЂРѕРєРѕРІ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
+0053:         self.client.force_authenticate(user=self.user)
+0054:         response = self.client.get(self.lesson_list_url)
+0055:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0056:         self.assertIn("results", response.data)
+0057: 
+0058:     def test_lesson_list_unauthenticated(self):
+0059:         """РўРµСЃС‚ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СѓСЂРѕРєРѕРІ РЅРµР°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
+0060:         response = self.client.get(self.lesson_list_url)
+0061:         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+0062: 
+0063:     def test_lesson_detail_authenticated(self):
+0064:         """РўРµСЃС‚ РїРѕР»СѓС‡РµРЅРёСЏ РґРµС‚Р°Р»РµР№ СѓСЂРѕРєР° Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
+0065:         self.client.force_authenticate(user=self.user)
+0066:         response = self.client.get(self.lesson_detail_url)
+0067:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0068:         self.assertEqual(response.data["name"], "Test Lesson")
+0069: 
+0070:     def test_lesson_create_by_user(self):
+0071:         """РўРµСЃС‚ СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРєР° РѕР±С‹С‡РЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј"""
+0072:         self.client.force_authenticate(user=self.user)
+0073:         data = {
+0074:             "name": "New Lesson",
+0075:             "description": "New Lesson Description",
+0076:             "course": self.course.id,
+0077:             "video_link": "https://youtube.com/watch?v=test",
+0078:         }
+0079:         response = self.client.post(self.lesson_create_url, data)
+0080:         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+0081:         self.assertEqual(Lesson.objects.count(), 2)
+0082: 
+0083:     def test_lesson_update_by_owner(self):
+0084:         """РўРµСЃС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ СѓСЂРѕРєР° РІР»Р°РґРµР»СЊС†РµРј"""
+0085:         self.client.force_authenticate(user=self.user)
+0086:         data = {"name": "Updated Lesson Name"}
+0087:         response = self.client.patch(self.lesson_update_url, data)
+0088:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0089:         self.lesson.refresh_from_db()
+0090:         self.assertEqual(self.lesson.name, "Updated Lesson Name")
 0091: 
-0092:     def test_lesson_update_by_owner(self):
-0093:         """РўРµСЃС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ СѓСЂРѕРєР° РІР»Р°РґРµР»СЊС†РµРј"""
-0094:         self.client.force_authenticate(user=self.user)
-0095:         data = {'name': 'Updated Lesson Name'}
-0096:         response = self.client.patch(self.lesson_update_url, data)
-0097:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0098:         self.lesson.refresh_from_db()
-0099:         self.assertEqual(self.lesson.name, 'Updated Lesson Name')
-0100: 
-0101:     def test_lesson_update_by_other_user(self):
-0102:         """РўРµСЃС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ СѓСЂРѕРєР° РґСЂСѓРіРёРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј (РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р·Р°РїСЂРµС‰РµРЅРѕ)"""
-0103:         other_user = User.objects.create_user(
-0104:             username='other_user',
-0105:             email='other@example.com',
-0106:             password='testpass123'
-0107:         )
-0108:         self.client.force_authenticate(user=other_user)
-0109:         data = {'name': 'Updated by Other User'}
-0110:         response = self.client.patch(self.lesson_update_url, data)
+0092:     def test_lesson_update_by_other_user(self):
+0093:         """РўРµСЃС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ СѓСЂРѕРєР° РґСЂСѓРіРёРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј (РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р·Р°РїСЂРµС‰РµРЅРѕ)"""
+0094:         other_user = User.objects.create_user(username="other_user", email="other@example.com", password="testpass123")
+0095:         self.client.force_authenticate(user=other_user)
+0096:         data = {"name": "Updated by Other User"}
+0097:         response = self.client.patch(self.lesson_update_url, data)
+0098:         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+0099: 
+0100:     def test_lesson_delete_by_owner(self):
+0101:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ СѓСЂРѕРєР° РІР»Р°РґРµР»СЊС†РµРј"""
+0102:         self.client.force_authenticate(user=self.user)
+0103:         response = self.client.delete(self.lesson_delete_url)
+0104:         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+0105:         self.assertEqual(Lesson.objects.count(), 0)
+0106: 
+0107:     def test_lesson_delete_by_moderator(self):
+0108:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ СѓСЂРѕРєР° РјРѕРґРµСЂР°С‚РѕСЂРѕРј (РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р·Р°РїСЂРµС‰РµРЅРѕ)"""
+0109:         self.client.force_authenticate(user=self.moderator)
+0110:         response = self.client.delete(self.lesson_delete_url)
 0111:         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-0112: 
-0113:     def test_lesson_delete_by_owner(self):
-0114:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ СѓСЂРѕРєР° РІР»Р°РґРµР»СЊС†РµРј"""
-0115:         self.client.force_authenticate(user=self.user)
-0116:         response = self.client.delete(self.lesson_delete_url)
-0117:         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-0118:         self.assertEqual(Lesson.objects.count(), 0)
-0119: 
-0120:     def test_lesson_delete_by_moderator(self):
-0121:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ СѓСЂРѕРєР° РјРѕРґРµСЂР°С‚РѕСЂРѕРј (РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р·Р°РїСЂРµС‰РµРЅРѕ)"""
-0122:         self.client.force_authenticate(user=self.moderator)
-0123:         response = self.client.delete(self.lesson_delete_url)
-0124:         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-0125:         self.assertEqual(Lesson.objects.count(), 1)
+0112:         self.assertEqual(Lesson.objects.count(), 1)
+0113: 
+0114:     def test_lesson_with_invalid_video_link(self):
+0115:         """РўРµСЃС‚ СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРєР° СЃ РЅРµРІР°Р»РёРґРЅРѕР№ РІРёРґРµРѕ СЃСЃС‹Р»РєРѕР№"""
+0116:         self.client.force_authenticate(user=self.user)
+0117:         data = {
+0118:             "name": "Invalid Link Lesson",
+0119:             "description": "Lesson with invalid video link",
+0120:             "course": self.course.id,
+0121:             "video_link": "https://vk.com/video123",  # РќРµ YouTube!
+0122:         }
+0123:         response = self.client.post(self.lesson_create_url, data)
+0124:         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+0125:         self.assertIn("video_link", response.data)
 0126: 
-0127:     def test_lesson_with_invalid_video_link(self):
-0128:         """РўРµСЃС‚ СЃРѕР·РґР°РЅРёСЏ СѓСЂРѕРєР° СЃ РЅРµРІР°Р»РёРґРЅРѕР№ РІРёРґРµРѕ СЃСЃС‹Р»РєРѕР№"""
-0129:         self.client.force_authenticate(user=self.user)
-0130:         data = {
-0131:             'name': 'Invalid Link Lesson',
-0132:             'description': 'Lesson with invalid video link',
-0133:             'course': self.course.id,
-0134:             'video_link': 'https://vk.com/video123'  # РќРµ YouTube!
-0135:         }
-0136:         response = self.client.post(self.lesson_create_url, data)
-0137:         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-0138:         self.assertIn('video_link', response.data)
-0139: 
-0140: 
-0141: class SubscriptionTest(APITestCase):
-0142:     """
-0143:     РўРµСЃС‚С‹ С„СѓРЅРєС†РёРѕРЅР°Р»Р° РїРѕРґРїРёСЃРѕРє РЅР° РєСѓСЂСЃС‹
-0144:     """
-0145: 
-0146:     def setUp(self):
-0147:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
-0148:         self.user1 = User.objects.create_user(
-0149:             username='user1',
-0150:             email='user1@example.com',
-0151:             password='testpass123'
-0152:         )
-0153: 
-0154:         self.user2 = User.objects.create_user(
-0155:             username='user2',
-0156:             email='user2@example.com',
-0157:             password='testpass123'
-0158:         )
+0127: 
+0128: class SubscriptionTest(APITestCase):
+0129:     """
+0130:     РўРµСЃС‚С‹ С„СѓРЅРєС†РёРѕРЅР°Р»Р° РїРѕРґРїРёСЃРѕРє РЅР° РєСѓСЂСЃС‹
+0131:     """
+0132: 
+0133:     def setUp(self):
+0134:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+0135:         self.user1 = User.objects.create_user(username="user1", email="user1@example.com", password="testpass123")
+0136: 
+0137:         self.user2 = User.objects.create_user(username="user2", email="user2@example.com", password="testpass123")
+0138: 
+0139:         # РЎРѕР·РґР°РµРј РєСѓСЂСЃ
+0140:         self.course = Course.objects.create(name="Test Course for Subscription", description="Test Course Description")
+0141: 
+0142:         # URL РґР»СЏ РїРѕРґРїРёСЃРѕРє
+0143:         self.subscription_url = reverse("lessons:subscription")
+0144: 
+0145:     def test_add_subscription(self):
+0146:         """РўРµСЃС‚ РґРѕР±Р°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
+0147:         self.client.force_authenticate(user=self.user1)
+0148:         data = {"course_id": self.course.id}
+0149: 
+0150:         response = self.client.post(self.subscription_url, data)
+0151:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0152:         self.assertEqual(response.data["message"], "РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°")
+0153:         self.assertTrue(Subscription.objects.filter(user=self.user1, course=self.course).exists())
+0154: 
+0155:     def test_remove_subscription(self):
+0156:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
+0157:         # РЎРЅР°С‡Р°Р»Р° РґРѕР±Р°РІР»СЏРµРј РїРѕРґРїРёСЃРєСѓ
+0158:         Subscription.objects.create(user=self.user1, course=self.course)
 0159: 
-0160:         # РЎРѕР·РґР°РµРј РєСѓСЂСЃ
-0161:         self.course = Course.objects.create(
-0162:             name='Test Course for Subscription',
-0163:             description='Test Course Description'
-0164:         )
-0165: 
-0166:         # URL РґР»СЏ РїРѕРґРїРёСЃРѕРє
-0167:         self.subscription_url = reverse('lessons:subscription')
-0168: 
-0169:     def test_add_subscription(self):
-0170:         """РўРµСЃС‚ РґРѕР±Р°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
+0160:         self.client.force_authenticate(user=self.user1)
+0161:         data = {"course_id": self.course.id}
+0162: 
+0163:         response = self.client.post(self.subscription_url, data)
+0164:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0165:         self.assertEqual(response.data["message"], "РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°")
+0166:         self.assertFalse(Subscription.objects.filter(user=self.user1, course=self.course).exists())
+0167: 
+0168:     def test_subscription_different_users(self):
+0169:         """РўРµСЃС‚ С‡С‚Рѕ РїРѕРґРїРёСЃРєРё СЂР°Р·РЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РЅРµ РїРµСЂРµСЃРµРєР°СЋС‚СЃСЏ"""
+0170:         # User1 РїРѕРґРїРёСЃС‹РІР°РµС‚СЃСЏ
 0171:         self.client.force_authenticate(user=self.user1)
-0172:         data = {'course_id': self.course.id}
-0173: 
-0174:         response = self.client.post(self.subscription_url, data)
-0175:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0176:         self.assertEqual(response.data['message'], 'РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°')
-0177:         self.assertTrue(Subscription.objects.filter(user=self.user1, course=self.course).exists())
-0178: 
-0179:     def test_remove_subscription(self):
-0180:         """РўРµСЃС‚ СѓРґР°Р»РµРЅРёСЏ РїРѕРґРїРёСЃРєРё"""
-0181:         # РЎРЅР°С‡Р°Р»Р° РґРѕР±Р°РІР»СЏРµРј РїРѕРґРїРёСЃРєСѓ
-0182:         Subscription.objects.create(user=self.user1, course=self.course)
-0183: 
-0184:         self.client.force_authenticate(user=self.user1)
-0185:         data = {'course_id': self.course.id}
-0186: 
-0187:         response = self.client.post(self.subscription_url, data)
-0188:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0189:         self.assertEqual(response.data['message'], 'РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°')
-0190:         self.assertFalse(Subscription.objects.filter(user=self.user1, course=self.course).exists())
-0191: 
-0192:     def test_subscription_different_users(self):
-0193:         """РўРµСЃС‚ С‡С‚Рѕ РїРѕРґРїРёСЃРєРё СЂР°Р·РЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РЅРµ РїРµСЂРµСЃРµРєР°СЋС‚СЃСЏ"""
-0194:         # User1 РїРѕРґРїРёСЃС‹РІР°РµС‚СЃСЏ
-0195:         self.client.force_authenticate(user=self.user1)
-0196:         data = {'course_id': self.course.id}
-0197:         response = self.client.post(self.subscription_url, data)
-0198:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0199: 
-0200:         # User2 РїСЂРѕРІРµСЂСЏРµС‚ С‡С‚Рѕ РЅРµ РїРѕРґРїРёСЃР°РЅ
-0201:         self.client.force_authenticate(user=self.user2)
-0202:         url = reverse('courses:course-detail', args=[self.course.id])
-0203:         response = self.client.get(url)
-0204:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0205:         self.assertFalse(response.data['is_subscribed'])
-0206: 
-0207:     def test_subscription_without_course_id(self):
-0208:         """РўРµСЃС‚ РїРѕРґРїРёСЃРєРё Р±РµР· course_id"""
-0209:         self.client.force_authenticate(user=self.user1)
-0210:         response = self.client.post(self.subscription_url, {})
-0211:         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-0212:         self.assertIn('error', response.data)
-0213: 
-0214:     def test_subscription_nonexistent_course(self):
-0215:         """РўРµСЃС‚ РїРѕРґРїРёСЃРєРё РЅР° РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РєСѓСЂСЃ"""
-0216:         self.client.force_authenticate(user=self.user1)
-0217:         data = {'course_id': 9999}  # РќРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ ID
-0218:         response = self.client.post(self.subscription_url, data)
-0219:         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+0172:         data = {"course_id": self.course.id}
+0173:         response = self.client.post(self.subscription_url, data)
+0174:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0175: 
+0176:         # User2 РїСЂРѕРІРµСЂСЏРµС‚ С‡С‚Рѕ РЅРµ РїРѕРґРїРёСЃР°РЅ
+0177:         self.client.force_authenticate(user=self.user2)
+0178:         url = reverse("courses:course-detail", args=[self.course.id])
+0179:         response = self.client.get(url)
+0180:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0181:         self.assertFalse(response.data["is_subscribed"])
+0182: 
+0183:     def test_subscription_without_course_id(self):
+0184:         """РўРµСЃС‚ РїРѕРґРїРёСЃРєРё Р±РµР· course_id"""
+0185:         self.client.force_authenticate(user=self.user1)
+0186:         response = self.client.post(self.subscription_url, {})
+0187:         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+0188:         self.assertIn("error", response.data)
+0189: 
+0190:     def test_subscription_nonexistent_course(self):
+0191:         """РўРµСЃС‚ РїРѕРґРїРёСЃРєРё РЅР° РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РєСѓСЂСЃ"""
+0192:         self.client.force_authenticate(user=self.user1)
+0193:         data = {"course_id": 9999}  # РќРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ ID
+0194:         response = self.client.post(self.subscription_url, data)
+0195:         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+0196: 
+0197:     def test_is_subscribed_field(self):
+0198:         """РўРµСЃС‚ РїРѕР»СЏ is_subscribed РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂРµ РєСѓСЂСЃР°"""
+0199:         # User1 РїРѕРґРїРёСЃС‹РІР°РµС‚СЃСЏ
+0200:         Subscription.objects.create(user=self.user1, course=self.course)
+0201: 
+0202:         self.client.force_authenticate(user=self.user1)
+0203:         url = reverse("courses:course-detail", args=[self.course.id])
+0204:         response = self.client.get(url)
+0205: 
+0206:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0207:         self.assertTrue(response.data["is_subscribed"])
+0208: 
+0209:         # User2 РЅРµ РїРѕРґРїРёСЃР°РЅ
+0210:         self.client.force_authenticate(user=self.user2)
+0211:         response = self.client.get(url)
+0212:         self.assertEqual(response.status_code, status.HTTP_200_OK)
+0213:         self.assertFalse(response.data["is_subscribed"])
+0214: 
+0215: 
+0216: class PermissionTest(APITestCase):
+0217:     """
+0218:     РўРµСЃС‚С‹ РїСЂР°РІ РґРѕСЃС‚СѓРїР° РґР»СЏ СЂР°Р·РЅС‹С… СЂРѕР»РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+0219:     """
 0220: 
-0221:     def test_is_subscribed_field(self):
-0222:         """РўРµСЃС‚ РїРѕР»СЏ is_subscribed РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂРµ РєСѓСЂСЃР°"""
-0223:         # User1 РїРѕРґРїРёСЃС‹РІР°РµС‚СЃСЏ
-0224:         Subscription.objects.create(user=self.user1, course=self.course)
-0225: 
-0226:         self.client.force_authenticate(user=self.user1)
-0227:         url = reverse('courses:course-detail', args=[self.course.id])
-0228:         response = self.client.get(url)
-0229: 
-0230:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0231:         self.assertTrue(response.data['is_subscribed'])
-0232: 
-0233:         # User2 РЅРµ РїРѕРґРїРёСЃР°РЅ
-0234:         self.client.force_authenticate(user=self.user2)
-0235:         response = self.client.get(url)
-0236:         self.assertEqual(response.status_code, status.HTTP_200_OK)
-0237:         self.assertFalse(response.data['is_subscribed'])
-0238: 
-0239: 
-0240: class PermissionTest(APITestCase):
-0241:     """
-0242:     РўРµСЃС‚С‹ РїСЂР°РІ РґРѕСЃС‚СѓРїР° РґР»СЏ СЂР°Р·РЅС‹С… СЂРѕР»РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
-0243:     """
-0244: 
-0245:     def setUp(self):
-0246:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃ СЂР°Р·РЅС‹РјРё СЂРѕР»СЏРјРё
-0247:         self.user = User.objects.create_user(
-0248:             username='regular_user',
-0249:             email='user@example.com',
-0250:             password='testpass123',
-0251:             role='user'
-0252:         )
-0253: 
-0254:         self.moderator = User.objects.create_user(
-0255:             username='moderator_user',
-0256:             email='moderator@example.com',
-0257:             password='testpass123',
-0258:             role='moderator'
-0259:         )
-0260: 
-0261:         self.manager = User.objects.create_user(
-0262:             username='manager_user',
-0263:             email='manager@example.com',
-0264:             password='testpass123',
-0265:             role='manager'
-0266:         )
-0267: 
-0268:         # РЎРѕР·РґР°РµРј РєСѓСЂСЃ РѕС‚ РёРјРµРЅРё РѕР±С‹С‡РЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0269:         self.course = Course.objects.create(
-0270:             name='Test Course',
-0271:             description='Test Course Description',
-0272:             owner=self.user
-0273:         )
-0274: 
-0275:         # РЎРѕР·РґР°РµРј СѓСЂРѕРє РѕС‚ РёРјРµРЅРё РѕР±С‹С‡РЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
-0276:         self.lesson = Lesson.objects.create(
-0277:             name='Test Lesson',
-0278:             description='Test Lesson Description',
-0279:             course=self.course,
-0280:             owner=self.user
-0281:         )
-0282: 
-0283:         # URL
-0284:         self.lesson_list_url = reverse('lessons:lessons_list')
-0285:         self.course_list_url = reverse('courses:course-list')
-0286: 
-0287:     def test_access_to_lessons_list(self):
-0288:         """РўРµСЃС‚ РґРѕСЃС‚СѓРїР° Рє СЃРїРёСЃРєСѓ СѓСЂРѕРєРѕРІ РґР»СЏ СЂР°Р·РЅС‹С… СЂРѕР»РµР№"""
-0289:         # Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РґРѕР»Р¶РЅС‹ РёРјРµС‚СЊ РґРѕСЃС‚СѓРї
-0290:         for user in [self.user, self.moderator, self.manager]:
-0291:             self.client.force_authenticate(user=user)
-0292:             response = self.client.get(self.lesson_list_url)
-0293:             self.assertEqual(response.status_code, status.HTTP_200_OK)
-0294: 
-0295:     def test_access_to_courses_list(self):
-0296:         """РўРµСЃС‚ РґРѕСЃС‚СѓРїР° Рє СЃРїРёСЃРєСѓ РєСѓСЂСЃРѕРІ РґР»СЏ СЂР°Р·РЅС‹С… СЂРѕР»РµР№"""
-0297:         # Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РґРѕР»Р¶РЅС‹ РёРјРµС‚СЊ РґРѕСЃС‚СѓРї
-0298:         for user in [self.user, self.moderator, self.manager]:
-0299:             self.client.force_authenticate(user=user)
-0300:             response = self.client.get(self.course_list_url)
-0301:             self.assertEqual(response.status_code, status.HTTP_200_OK)
+0221:     def setUp(self):
+0222:         # РЎРѕР·РґР°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃ СЂР°Р·РЅС‹РјРё СЂРѕР»СЏРјРё
+0223:         self.user = User.objects.create_user(
+0224:             username="regular_user", email="user@example.com", password="testpass123", role="user"
+0225:         )
+0226: 
+0227:         self.moderator = User.objects.create_user(
+0228:             username="moderator_user", email="moderator@example.com", password="testpass123", role="moderator"
+0229:         )
+0230: 
+0231:         self.manager = User.objects.create_user(
+0232:             username="manager_user", email="manager@example.com", password="testpass123", role="manager"
+0233:         )
+0234: 
+0235:         # РЎРѕР·РґР°РµРј РєСѓСЂСЃ РѕС‚ РёРјРµРЅРё РѕР±С‹С‡РЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0236:         self.course = Course.objects.create(name="Test Course", description="Test Course Description", owner=self.user)
+0237: 
+0238:         # РЎРѕР·РґР°РµРј СѓСЂРѕРє РѕС‚ РёРјРµРЅРё РѕР±С‹С‡РЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0239:         self.lesson = Lesson.objects.create(
+0240:             name="Test Lesson", description="Test Lesson Description", course=self.course, owner=self.user
+0241:         )
+0242: 
+0243:         # URL
+0244:         self.lesson_list_url = reverse("lessons:lessons_list")
+0245:         self.course_list_url = reverse("courses:course-list")
+0246: 
+0247:     def test_access_to_lessons_list(self):
+0248:         """РўРµСЃС‚ РґРѕСЃС‚СѓРїР° Рє СЃРїРёСЃРєСѓ СѓСЂРѕРєРѕРІ РґР»СЏ СЂР°Р·РЅС‹С… СЂРѕР»РµР№"""
+0249:         # Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РґРѕР»Р¶РЅС‹ РёРјРµС‚СЊ РґРѕСЃС‚СѓРї
+0250:         for user in [self.user, self.moderator, self.manager]:
+0251:             self.client.force_authenticate(user=user)
+0252:             response = self.client.get(self.lesson_list_url)
+0253:             self.assertEqual(response.status_code, status.HTTP_200_OK)
+0254: 
+0255:     def test_access_to_courses_list(self):
+0256:         """РўРµСЃС‚ РґРѕСЃС‚СѓРїР° Рє СЃРїРёСЃРєСѓ РєСѓСЂСЃРѕРІ РґР»СЏ СЂР°Р·РЅС‹С… СЂРѕР»РµР№"""
+0257:         # Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РґРѕР»Р¶РЅС‹ РёРјРµС‚СЊ РґРѕСЃС‚СѓРї
+0258:         for user in [self.user, self.moderator, self.manager]:
+0259:             self.client.force_authenticate(user=user)
+0260:             response = self.client.get(self.course_list_url)
+0261:             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\urls.py
@@ -1483,196 +1512,200 @@
 0017: router.register(r"courses", CourseViewSet)
 0018: 
 0019: urlpatterns = [
-0020:                   path("lessons_list/", LessonListAPIView.as_view(), name="lessons_list"),
-0021:                   path("lesson/<int:pk>/", LessonRetrieveAPIView.as_view(), name="lesson"),
-0022:                   path("lesson/create/", LessonCreateAPIView.as_view(), name="lesson-create"),
-0023:                   path("lesson/<int:pk>/delete/", LessonDestroyAPIView.as_view(), name="lesson-delete"),
-0024:                   path("lesson/<int:pk>/update/", LessonUpdateAPIView.as_view(), name="lesson-update"),
-0025:                   path("subscription/", SubscriptionAPIView.as_view(), name="subscription"),
-0026:               ] + router.urls
+0020:     path("lessons_list/", LessonListAPIView.as_view(), name="lessons_list"),
+0021:     path("lesson/<int:pk>/", LessonRetrieveAPIView.as_view(), name="lesson"),
+0022:     path("lesson/create/", LessonCreateAPIView.as_view(), name="lesson-create"),
+0023:     path("lesson/<int:pk>/delete/", LessonDestroyAPIView.as_view(), name="lesson-delete"),
+0024:     path("lesson/<int:pk>/update/", LessonUpdateAPIView.as_view(), name="lesson-update"),
+0025:     path("subscription/", SubscriptionAPIView.as_view(), name="subscription"),
+0026: ] + router.urls
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\validators.py
 ================================================================================
-0001: from rest_framework import serializers
+0001: import re
 0002: from urllib.parse import urlparse
-0003: import re
-0004: 
+0003: 
+0004: from rest_framework import serializers
 0005: 
-0006: class YouTubeLinkValidator:
-0007:     """
-0008:     Р’Р°Р»РёРґР°С‚РѕСЂ РґР»СЏ РїСЂРѕРІРµСЂРєРё, С‡С‚Рѕ СЃСЃС‹Р»РєРё РІРµРґСѓС‚ С‚РѕР»СЊРєРѕ РЅР° YouTube
-0009:     """
-0010: 
-0011:     def __init__(self, fields):
-0012:         self.fields = fields if isinstance(fields, list) else [fields]
-0013:         self.allowed_domains = [
-0014:             'youtube.com',
-0015:             'www.youtube.com',
-0016:             'youtu.be',
-0017:             'www.youtu.be',
-0018:             'm.youtube.com',
-0019:         ]
-0020: 
-0021:     def __call__(self, attrs):
-0022:         for field in self.fields:
-0023:             field_value = attrs.get(field)
-0024: 
-0025:             if not field_value:
-0026:                 continue
-0027: 
-0028:             # РС‰РµРј РІСЃРµ URL РІ С‚РµРєСЃС‚Рµ
-0029:             url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
-0030:             urls = re.findall(url_pattern, str(field_value))
-0031: 
-0032:             for url in urls:
-0033:                 self.validate_single_url(url, field)
-0034: 
-0035:         return attrs
-0036: 
-0037:     def validate_single_url(self, url, field_name):
-0038:         """РџСЂРѕРІРµСЂСЏРµС‚ РѕРґРЅСѓ СЃСЃС‹Р»РєСѓ РЅР° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ YouTube"""
-0039:         # Р”РѕР±Р°РІР»СЏРµРј http:// РµСЃР»Рё РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ СЃС…РµРјР°
-0040:         if not url.startswith(('http://', 'https://')):
-0041:             url = 'https://' + url
-0042: 
-0043:         try:
-0044:             parsed_url = urlparse(url)
-0045:             domain = parsed_url.netloc.lower()
-0046: 
-0047:             # РЈР±РёСЂР°РµРј www. РґР»СЏ СѓРЅРёС„РёРєР°С†РёРё РїСЂРѕРІРµСЂРєРё
-0048:             domain = domain.replace('www.', '')
-0049: 
-0050:             # РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РґРѕРјРµРЅ СЂР°Р·СЂРµС€РµРЅ
-0051:             is_valid = False
-0052:             for allowed_domain in self.allowed_domains:
-0053:                 if allowed_domain in domain:
-0054:                     is_valid = True
-0055:                     break
-0056: 
-0057:             if not is_valid:
-0058:                 raise serializers.ValidationError({
-0059:                     field_name: f'РЎСЃС‹Р»РєРё СЂР°Р·СЂРµС€РµРЅС‹ С‚РѕР»СЊРєРѕ РЅР° YouTube. РќР°Р№РґРµРЅ Р·Р°РїСЂРµС‰РµРЅРЅС‹Р№ СЂРµСЃСѓСЂСЃ: {domain}'
-0060:                 })
-0061: 
-0062:         except Exception as e:
-0063:             raise serializers.ValidationError({
-0064:                 field_name: f'РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё СЃСЃС‹Р»РєРё: {str(e)}'
-0065:             })
+0006: 
+0007: class YouTubeLinkValidator:
+0008:     """
+0009:     Р’Р°Р»РёРґР°С‚РѕСЂ РґР»СЏ РїСЂРѕРІРµСЂРєРё, С‡С‚Рѕ СЃСЃС‹Р»РєРё РІРµРґСѓС‚ С‚РѕР»СЊРєРѕ РЅР° YouTube
+0010:     """
+0011: 
+0012:     def __init__(self, fields):
+0013:         self.fields = fields if isinstance(fields, list) else [fields]
+0014:         self.allowed_domains = [
+0015:             "youtube.com",
+0016:             "www.youtube.com",
+0017:             "youtu.be",
+0018:             "www.youtu.be",
+0019:             "m.youtube.com",
+0020:         ]
+0021: 
+0022:     def __call__(self, attrs):
+0023:         for field in self.fields:
+0024:             field_value = attrs.get(field)
+0025: 
+0026:             if not field_value:
+0027:                 continue
+0028: 
+0029:             # РС‰РµРј РІСЃРµ URL РІ С‚РµРєСЃС‚Рµ
+0030:             url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
+0031:             urls = re.findall(url_pattern, str(field_value))
+0032: 
+0033:             for url in urls:
+0034:                 self.validate_single_url(url, field)
+0035: 
+0036:         return attrs
+0037: 
+0038:     def validate_single_url(self, url, field_name):
+0039:         """РџСЂРѕРІРµСЂСЏРµС‚ РѕРґРЅСѓ СЃСЃС‹Р»РєСѓ РЅР° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ YouTube"""
+0040:         # Р”РѕР±Р°РІР»СЏРµРј http:// РµСЃР»Рё РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ СЃС…РµРјР°
+0041:         if not url.startswith(("http://", "https://")):
+0042:             url = "https://" + url
+0043: 
+0044:         try:
+0045:             parsed_url = urlparse(url)
+0046:             domain = parsed_url.netloc.lower()
+0047: 
+0048:             # РЈР±РёСЂР°РµРј www. РґР»СЏ СѓРЅРёС„РёРєР°С†РёРё РїСЂРѕРІРµСЂРєРё
+0049:             domain = domain.replace("www.", "")
+0050: 
+0051:             # РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РґРѕРјРµРЅ СЂР°Р·СЂРµС€РµРЅ
+0052:             is_valid = False
+0053:             for allowed_domain in self.allowed_domains:
+0054:                 if allowed_domain in domain:
+0055:                     is_valid = True
+0056:                     break
+0057: 
+0058:             if not is_valid:
+0059:                 raise serializers.ValidationError(
+0060:                     {field_name: f"РЎСЃС‹Р»РєРё СЂР°Р·СЂРµС€РµРЅС‹ С‚РѕР»СЊРєРѕ РЅР° YouTube. РќР°Р№РґРµРЅ Р·Р°РїСЂРµС‰РµРЅРЅС‹Р№ СЂРµСЃСѓСЂСЃ: {domain}"}
+0061:                 )
+0062: 
+0063:         except Exception as e:
+0064:             raise serializers.ValidationError({field_name: f"РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё СЃСЃС‹Р»РєРё: {str(e)}"})
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\views.py
 ================================================================================
-0001: from django.utils.decorators import method_decorator
-0002: from drf_yasg.utils import swagger_auto_schema
-0003: from rest_framework import permissions
-0004: from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
-0005: from rest_framework.viewsets import ModelViewSet
-0006: 
-0007: from .models import Course, Lesson, Subscription
-0008: from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
-0009: from .serializer import CourseSerializer, LessonSerializer
-0010: from rest_framework.views import APIView
-0011: from rest_framework.response import Response
-0012: from rest_framework import status
-0013: from rest_framework.permissions import IsAuthenticated
-0014: from django.shortcuts import get_object_or_404
+0001: from django.shortcuts import get_object_or_404
+0002: from django.utils.decorators import method_decorator
+0003: from drf_yasg.utils import swagger_auto_schema
+0004: from rest_framework import permissions, status
+0005: from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+0006: from rest_framework.permissions import IsAuthenticated
+0007: from rest_framework.response import Response
+0008: from rest_framework.views import APIView
+0009: from rest_framework.viewsets import ModelViewSet
+0010: 
+0011: from .models import Course, Lesson, Subscription
+0012: from .paginators import CoursePaginator, LessonPaginator
+0013: from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
+0014: from .serializer import CourseSerializer, LessonSerializer
 0015: 
-0016: from .paginators import LessonPaginator, CoursePaginator
+0016: from .tasks import send_course_update_notification
 0017: 
-0018: @method_decorator(name='list', decorator=swagger_auto_schema(
-0019:     operation_description="description from swagger_auto_schema via method_decorator"
-0020: ))
-0021: class CourseViewSet(ModelViewSet):
-0022:     queryset = Course.objects.all().order_by('id')
-0023:     serializer_class = CourseSerializer
-0024: 
-0025:     permission_classes = [permissions.IsAuthenticated, CoursePermission]
-0026:     pagination_class = CoursePaginator
-0027: 
-0028:     def get_serializer_context(self):
-0029:         """РџРµСЂРµРґР°РµРј request РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРѕРІРµСЂРєРё РїРѕРґРїРёСЃРєРё"""
-0030:         context = super().get_serializer_context()
-0031:         context['request'] = self.request
-0032:         return context
-0033: 
-0034:     def get_queryset(self):
-0035:         """Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РІРёРґСЏС‚ РІСЃРµ РєСѓСЂСЃС‹"""
-0036:         return Course.objects.all().order_by('id')
-0037: 
-0038:     def perform_create(self, serializer):
-0039:         """РџСЂРё СЃРѕР·РґР°РЅРёРё РєСѓСЂСЃР° РЅР°Р·РЅР°С‡Р°РµРј РІР»Р°РґРµР»СЊС†Р°"""
-0040:         course = serializer.save()
-0041:         course.owner = self.request.user
-0042:         course.save()
-0043: 
+0018: @method_decorator(
+0019:     name="list",
+0020:     decorator=swagger_auto_schema(operation_description="description from swagger_auto_schema via method_decorator"),
+0021: )
+0022: class CourseViewSet(ModelViewSet):
+0023:     queryset = Course.objects.all().order_by("id")
+0024:     serializer_class = CourseSerializer
+0025: 
+0026:     permission_classes = [permissions.IsAuthenticated, CoursePermission]
+0027:     pagination_class = CoursePaginator
+0028: 
+0029:     def get_serializer_context(self):
+0030:         """РџРµСЂРµРґР°РµРј request РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРѕРІРµСЂРєРё РїРѕРґРїРёСЃРєРё"""
+0031:         context = super().get_serializer_context()
+0032:         context["request"] = self.request
+0033:         return context
+0034: 
+0035:     def get_queryset(self):
+0036:         """Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РІРёРґСЏС‚ РІСЃРµ РєСѓСЂСЃС‹"""
+0037:         return Course.objects.all().order_by("id")
+0038: 
+0039:     def perform_create(self, serializer):
+0040:         """РџСЂРё СЃРѕР·РґР°РЅРёРё РєСѓСЂСЃР° РЅР°Р·РЅР°С‡Р°РµРј РІР»Р°РґРµР»СЊС†Р°"""
+0041:         course = serializer.save()
+0042:         course.owner = self.request.user
+0043:         course.save()
 0044: 
-0045: class LessonCreateAPIView(CreateAPIView):
-0046:     queryset = Lesson.objects.all()
-0047:     serializer_class = LessonSerializer
-0048:     permission_classes = [permissions.IsAuthenticated, LessonCreatePermission]
-0049: 
-0050:     def perform_create(self, serializer):
-0051:         lesson = serializer.save()
-0052:         lesson.owner = self.request.user
-0053:         lesson.save()
-0054: 
-0055: 
-0056: class LessonDestroyAPIView(DestroyAPIView):
-0057:     queryset = Lesson.objects.all()
-0058:     serializer_class = LessonSerializer
-0059:     permission_classes = [permissions.IsAuthenticated, LessonDeletePermission]
-0060: 
+0045:     def perform_update(self, serializer):
+0046:         course = serializer.save()
+0047:         # РћС‚РїСЂР°РІРєР° СѓРІРµРґРѕРјР»РµРЅРёСЏ Р°СЃРёРЅС…СЂРѕРЅРЅРѕ
+0048:         send_course_update_notification.delay(course.id)
+0049:         return course
+0050: 
+0051: 
+0052: class LessonCreateAPIView(CreateAPIView):
+0053:     queryset = Lesson.objects.all()
+0054:     serializer_class = LessonSerializer
+0055:     permission_classes = [permissions.IsAuthenticated, LessonCreatePermission]
+0056: 
+0057:     def perform_create(self, serializer):
+0058:         lesson = serializer.save()
+0059:         lesson.owner = self.request.user
+0060:         lesson.save()
 0061: 
-0062: class LessonUpdateAPIView(UpdateAPIView):
-0063:     queryset = Lesson.objects.all()
-0064:     serializer_class = LessonSerializer
-0065:     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
-0066: 
+0062: 
+0063: class LessonDestroyAPIView(DestroyAPIView):
+0064:     queryset = Lesson.objects.all()
+0065:     serializer_class = LessonSerializer
+0066:     permission_classes = [permissions.IsAuthenticated, LessonDeletePermission]
 0067: 
-0068: class LessonRetrieveAPIView(RetrieveAPIView):
-0069:     queryset = Lesson.objects.all()
-0070:     serializer_class = LessonSerializer
-0071:     permission_classes = [permissions.IsAuthenticated]
-0072: 
+0068: 
+0069: class LessonUpdateAPIView(UpdateAPIView):
+0070:     queryset = Lesson.objects.all()
+0071:     serializer_class = LessonSerializer
+0072:     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
 0073: 
-0074: class LessonListAPIView(ListAPIView):
-0075:     queryset = Lesson.objects.all().order_by('id')
-0076:     serializer_class = LessonSerializer
-0077:     permission_classes = [permissions.IsAuthenticated]
-0078:     pagination_class = LessonPaginator
+0074: 
+0075: class LessonRetrieveAPIView(RetrieveAPIView):
+0076:     queryset = Lesson.objects.all()
+0077:     serializer_class = LessonSerializer
+0078:     permission_classes = [permissions.IsAuthenticated]
 0079: 
-0080:     def get_queryset(self):
-0081:         return Lesson.objects.all().order_by('id')
-0082: 
-0083: 
-0084: class SubscriptionAPIView(APIView):
-0085:     """API РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєР°РјРё РЅР° РєСѓСЂСЃС‹"""
-0086:     permission_classes = [IsAuthenticated]
-0087: 
-0088:     def post(self, request, *args, **kwargs):
-0089:         user = request.user
-0090:         course_id = request.data.get('course_id')
-0091: 
-0092:         if not course_id:
-0093:             return Response(
-0094:                 {"error": "course_id РѕР±СЏР·Р°С‚РµР»РµРЅ"},
-0095:                 status=status.HTTP_400_BAD_REQUEST
-0096:             )
-0097: 
-0098:         course = get_object_or_404(Course, id=course_id)
-0099:         subscription = Subscription.objects.filter(user=user, course=course)
-0100: 
-0101:         if subscription.exists():
-0102:             # РЈРґР°Р»СЏРµРј РїРѕРґРїРёСЃРєСѓ
-0103:             subscription.delete()
-0104:             message = 'РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°'
-0105:         else:
-0106:             # РЎРѕР·РґР°РµРј РїРѕРґРїРёСЃРєСѓ
-0107:             Subscription.objects.create(user=user, course=course)
-0108:             message = 'РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°'
-0109: 
-0110:         return Response({"message": message}, status=status.HTTP_200_OK)
+0080: 
+0081: class LessonListAPIView(ListAPIView):
+0082:     queryset = Lesson.objects.all().order_by("id")
+0083:     serializer_class = LessonSerializer
+0084:     permission_classes = [permissions.IsAuthenticated]
+0085:     pagination_class = LessonPaginator
+0086: 
+0087:     def get_queryset(self):
+0088:         return Lesson.objects.all().order_by("id")
+0089: 
+0090: 
+0091: class SubscriptionAPIView(APIView):
+0092:     """API РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєР°РјРё РЅР° РєСѓСЂСЃС‹"""
+0093: 
+0094:     permission_classes = [IsAuthenticated]
+0095: 
+0096:     def post(self, request, *args, **kwargs):
+0097:         user = request.user
+0098:         course_id = request.data.get("course_id")
+0099: 
+0100:         if not course_id:
+0101:             return Response({"error": "course_id РѕР±СЏР·Р°С‚РµР»РµРЅ"}, status=status.HTTP_400_BAD_REQUEST)
+0102: 
+0103:         course = get_object_or_404(Course, id=course_id)
+0104:         subscription = Subscription.objects.filter(user=user, course=course)
+0105: 
+0106:         if subscription.exists():
+0107:             # РЈРґР°Р»СЏРµРј РїРѕРґРїРёСЃРєСѓ
+0108:             subscription.delete()
+0109:             message = "РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°"
+0110:         else:
+0111:             # РЎРѕР·РґР°РµРј РїРѕРґРїРёСЃРєСѓ
+0112:             Subscription.objects.create(user=user, course=course)
+0113:             message = "РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°"
+0114: 
+0115:         return Response({"message": message}, status=status.HTTP_200_OK)
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\lms\__init__.py
@@ -2483,35 +2516,27 @@
 0102:     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="РЎСѓРјРјР° РѕРїР»Р°С‚С‹")
 0103:     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, verbose_name="РЎРїРѕСЃРѕР± РѕРїР»Р°С‚С‹")
 0104:     session_id = models.CharField(
-0105:         max_length=255,
-0106:         blank=True,
-0107:         null=True,
-0108:         verbose_name="id СЃРµСЃСЃРёРё",
-0109:         help_text="РІРІРµРґРёС‚Рµ id СЃРµСЃСЃРёРё"
-0110:     )
-0111:     link_for_pay = models.URLField(
-0112:         max_length=400,
-0113:         blank=True,
-0114:         null=True,
-0115:         verbose_name="РЎСЃС‹Р»Р»РєР° РЅР° РѕРїР»Р°С‚Сѓ",
-0116:         help_text="РІРІРµРґРёС‚Рµ СЃСЃС‹Р»РєСѓ РЅР° РѕРїР»Р°С‚Сѓ"
-0117:     )
+0105:         max_length=255, blank=True, null=True, verbose_name="id СЃРµСЃСЃРёРё", help_text="РІРІРµРґРёС‚Рµ id СЃРµСЃСЃРёРё"
+0106:     )
+0107:     link_for_pay = models.URLField(
+0108:         max_length=400, blank=True, null=True, verbose_name="РЎСЃС‹Р»Р»РєР° РЅР° РѕРїР»Р°С‚Сѓ", help_text="РІРІРµРґРёС‚Рµ СЃСЃС‹Р»РєСѓ РЅР° РѕРїР»Р°С‚Сѓ"
+0109:     )
+0110: 
+0111:     class Meta:
+0112:         verbose_name = "РџР»Р°С‚РµР¶"
+0113:         verbose_name_plural = "РџР»Р°С‚РµР¶Рё"
+0114:         ordering = ["-payment_date"]
+0115: 
+0116:     def __str__(self):
+0117:         return f"РџР»Р°С‚РµР¶ {self.user.username} - {self.amount} СЂСѓР±. ({self.get_payment_method_display()})"
 0118: 
-0119:     class Meta:
-0120:         verbose_name = "РџР»Р°С‚РµР¶"
-0121:         verbose_name_plural = "РџР»Р°С‚РµР¶Рё"
-0122:         ordering = ["-payment_date"]
-0123: 
-0124:     def __str__(self):
-0125:         return f"РџР»Р°С‚РµР¶ {self.user.username} - {self.amount} СЂСѓР±. ({self.get_payment_method_display()})"
-0126: 
-0127:     def clean(self):
-0128:         from django.core.exceptions import ValidationError
-0129: 
-0130:         if self.paid_course and self.paid_lesson:
-0131:             raise ValidationError("РњРѕР¶РЅРѕ РѕРїР»Р°С‚РёС‚СЊ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє, РЅРѕ РЅРµ РѕР±Р° РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ.")
-0132:         if not self.paid_course and not self.paid_lesson:
-0133:             raise ValidationError("Р”РѕР»Р¶РµРЅ Р±С‹С‚СЊ СѓРєР°Р·Р°РЅ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє.")
+0119:     def clean(self):
+0120:         from django.core.exceptions import ValidationError
+0121: 
+0122:         if self.paid_course and self.paid_lesson:
+0123:             raise ValidationError("РњРѕР¶РЅРѕ РѕРїР»Р°С‚РёС‚СЊ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє, РЅРѕ РЅРµ РѕР±Р° РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ.")
+0124:         if not self.paid_course and not self.paid_lesson:
+0125:             raise ValidationError("Р”РѕР»Р¶РµРЅ Р±С‹С‚СЊ СѓРєР°Р·Р°РЅ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє.")
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\permissions.py
@@ -2559,112 +2584,359 @@
 ================================================================================
 0001: from rest_framework import serializers
 0002: 
-0003: from .models import Payment, User
+0003: from lms.models import Course, Lesson
 0004: 
-0005: 
-0006: class PaymentSerializer(serializers.ModelSerializer):
-0007:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° РїР»Р°С‚РµР¶РµР№"""
-0008: 
-0009:     user = serializers.StringRelatedField(read_only=True)
-0010:     paid_course = serializers.StringRelatedField(read_only=True)
-0011:     paid_lesson = serializers.StringRelatedField(read_only=True)
-0012: 
-0013:     class Meta:
-0014:         model = Payment
-0015:         fields = ["id", "user", "payment_date", "paid_course", "paid_lesson", "amount", "payment_method"]
-0016: 
+0005: from .models import Payment, User
+0006: from .services import (
+0007:     convert_rub_to_usd,
+0008:     create_stripe_price,
+0009:     create_stripe_product,
+0010:     create_stripe_session,
+0011:     get_payment_status
+0012: )
+0013: 
+0014: 
+0015: class PaymentSerializer(serializers.ModelSerializer):
+0016:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїР»Р°С‚РµР¶РµР№"""
 0017: 
-0018: class UserPublicProfileSerializer(serializers.ModelSerializer):
-0019:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСѓР±Р»РёС‡РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РѕРіСЂР°РЅРёС‡РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ)"""
-0020: 
-0021:     class Meta:
-0022:         model = User
-0023:         fields = ["id", "username", "email", "first_name", "country", "city", "phone", "avatar", "role"]
-0024:         read_only_fields = ["id", "email", "role"]
-0025: 
-0026: 
-0027: class UserPrivateProfileSerializer(serializers.ModelSerializer):
-0028:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРёРІР°С‚РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РІСЃРµ РґР°РЅРЅС‹Рµ)"""
-0029: 
-0030:     payments = PaymentSerializer(many=True, read_only=True)
-0031: 
-0032:     class Meta:
-0033:         model = User
-0034:         fields = [
-0035:             "id",
-0036:             "username",
-0037:             "email",
-0038:             "first_name",
-0039:             "last_name",
-0040:             "country",
-0041:             "city",
-0042:             "phone",
-0043:             "avatar",
-0044:             "role",
-0045:             "is_blocked",
-0046:             "payments",
-0047:             "is_verified",
-0048:             "date_joined",
-0049:         ]
-0050:         read_only_fields = ["id", "email", "role", "is_blocked", "is_verified", "date_joined"]
+0018:     user = serializers.StringRelatedField(read_only=True)
+0019:     paid_course = serializers.StringRelatedField(read_only=True)
+0020:     paid_lesson = serializers.StringRelatedField(read_only=True)
+0021:     status = serializers.SerializerMethodField()
+0022:     payment_url = serializers.SerializerMethodField()
+0023: 
+0024:     class Meta:
+0025:         model = Payment
+0026:         fields = [
+0027:             "id",
+0028:             "user",
+0029:             "payment_date",
+0030:             "paid_course",
+0031:             "paid_lesson",
+0032:             "amount",
+0033:             "payment_method",
+0034:             "session_id",
+0035:             "link_for_pay",
+0036:             "status",
+0037:             "payment_url",
+0038:         ]
+0039:         read_only_fields = ["session_id", "link_for_pay", "status"]
+0040: 
+0041:     def get_status(self, obj):
+0042:         """РџРѕР»СѓС‡Р°РµС‚ СЃС‚Р°С‚СѓСЃ РїР»Р°С‚РµР¶Р° РёР· Stripe"""
+0043:         if obj.session_id:
+0044:             return get_payment_status(obj.session_id)
+0045:         return "created"
+0046: 
+0047:     def get_payment_url(self, obj):
+0048:         """Р’РѕР·РІСЂР°С‰Р°РµС‚ URL РґР»СЏ РѕРїР»Р°С‚С‹"""
+0049:         return obj.link_for_pay
+0050: 
 0051: 
-0052: 
-0053: class UserApiRegistrationSerializer(serializers.ModelSerializer):
-0054:     class Meta:
-0055:         model = User
-0056:         fields = [
-0057:             "username",
-0058:             "email",
-0059:             "password",
-0060:             "first_name",
-0061:             "last_name",
-0062:             "country",
-0063:             "city",
-0064:             "phone",
-0065:             "avatar",
-0066:         ]
-0067: 
-0068:     def validate_username(self, value):
-0069:         """РџСЂРѕРІРµСЂРєР° СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚Рё username"""
-0070:         if User.objects.filter(username=value).exclude(id=self.instance.id if self.instance else None).exists():
-0071:             raise serializers.ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
-0072:         return value
+0052: class PaymentCreateSerializer(serializers.ModelSerializer):
+0053:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РїР»Р°С‚РµР¶Р°"""
+0054: 
+0055:     course_id = serializers.IntegerField(write_only=True, required=False)
+0056:     lesson_id = serializers.IntegerField(write_only=True, required=False)
+0057: 
+0058:     # Р”РѕР±Р°РІР»СЏРµРј read-only РїРѕР»СЏ РґР»СЏ РѕС‚РІРµС‚Р°
+0059:     id = serializers.IntegerField(read_only=True)
+0060:     user = serializers.StringRelatedField(read_only=True)
+0061:     payment_date = serializers.DateTimeField(read_only=True)
+0062:     amount = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
+0063:     session_id = serializers.CharField(read_only=True)
+0064:     link_for_pay = serializers.URLField(read_only=True)
+0065:     status = serializers.SerializerMethodField(read_only=True)
+0066: 
+0067:     class Meta:
+0068:         model = Payment
+0069:         fields = [
+0070:             "id",
+0071:             "user",
+0072:             "payment_date",
+0073:             "course_id",
+0074:             "lesson_id",
+0075:             "amount",
+0076:             "payment_method",
+0077:             "session_id",
+0078:             "link_for_pay",
+0079:             "status",
+0080:         ]
+0081:         extra_kwargs = {"payment_method": {"required": True}}
+0082: 
+0083:     def get_status(self, obj):
+0084:         """РџРѕР»СѓС‡Р°РµС‚ СЃС‚Р°С‚СѓСЃ РїР»Р°С‚РµР¶Р° РёР· Stripe"""
+0085:         from .services import get_payment_status
+0086: 
+0087:         if obj.session_id:
+0088:             return get_payment_status(obj.session_id)
+0089:         return "created"
+0090: 
+0091:     def validate(self, attrs):
+0092:         """РџСЂРѕРІРµСЂСЏРµС‚, С‡С‚Рѕ СѓРєР°Р·Р°РЅ С‚РѕР»СЊРєРѕ РѕРґРёРЅ РѕР±СЉРµРєС‚ РґР»СЏ РѕРїР»Р°С‚С‹"""
+0093:         course_id = attrs.get("course_id")
+0094:         lesson_id = attrs.get("lesson_id")
+0095: 
+0096:         if not course_id and not lesson_id:
+0097:             raise serializers.ValidationError("РЈРєР°Р¶РёС‚Рµ course_id РёР»Рё lesson_id")
+0098: 
+0099:         if course_id and lesson_id:
+0100:             raise serializers.ValidationError("РЈРєР°Р¶РёС‚Рµ С‚РѕР»СЊРєРѕ course_id РёР»Рё С‚РѕР»СЊРєРѕ lesson_id")
+0101: 
+0102:         return attrs
+0103: 
+0104:     def create(self, validated_data):
+0105:         """РЎРѕР·РґР°РµС‚ РїР»Р°С‚РµР¶ Рё СЃРµСЃСЃРёСЋ РІ Stripe"""
+0106:         from lms.models import Course, Lesson
+0107: 
+0108:         from .services import convert_rub_to_usd, create_stripe_price, create_stripe_product, create_stripe_session
+0109: 
+0110:         request = self.context.get("request")
+0111:         user = request.user
+0112:         course_id = validated_data.pop("course_id", None)
+0113:         lesson_id = validated_data.pop("lesson_id", None)
+0114:         payment_method = validated_data.get("payment_method")
+0115: 
+0116:         # РџРѕР»СѓС‡Р°РµРј РѕР±СЉРµРєС‚ РґР»СЏ РѕРїР»Р°С‚С‹
+0117:         if course_id:
+0118:             paid_object = Course.objects.get(id=course_id)
+0119:             amount = 10000  # РЎС‚РѕРёРјРѕСЃС‚СЊ РєСѓСЂСЃР° РІ СЂСѓР±Р»СЏС…
+0120:             object_type = "course"
+0121:             name = f"РљСѓСЂСЃ: {paid_object.name}"
+0122:         else:
+0123:             paid_object = Lesson.objects.get(id=lesson_id)
+0124:             amount = 1000  # РЎС‚РѕРёРјРѕСЃС‚СЊ СѓСЂРѕРєР° РІ СЂСѓР±Р»СЏС…
+0125:             object_type = "lesson"
+0126:             name = f"РЈСЂРѕРє: {paid_object.name}"
+0127: 
+0128:         # РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј РІ USD РґР»СЏ Stripe (РёСЃРїРѕР»СЊР·СѓРµРј С„РёРєСЃРёСЂРѕРІР°РЅРЅС‹Р№ РєСѓСЂСЃ)
+0129:         try:
+0130:             from .services import convert_rub_to_usd
+0131: 
+0132:             amount_usd = convert_rub_to_usd(amount)
+0133:         except:
+0134:             # Fallback РЅР° С„РёРєСЃРёСЂРѕРІР°РЅРЅС‹Р№ РєСѓСЂСЃ
+0135:             amount_usd = amount / 80.0
+0136: 
+0137:         try:
+0138:             # РЎРѕР·РґР°РµРј РїСЂРѕРґСѓРєС‚ Рё С†РµРЅСѓ РІ Stripe
+0139:             product = create_stripe_product(name, paid_object.description)
+0140:             price = create_stripe_price(amount_usd, product.id)
+0141:             session = create_stripe_session(price.id)
+0142: 
+0143:             # РЎРѕР·РґР°РµРј РїР»Р°С‚РµР¶ РІ Р±Р°Р·Рµ
+0144:             payment_data = {
+0145:                 "user": user,
+0146:                 "amount": amount,
+0147:                 "payment_method": payment_method,
+0148:                 "session_id": session.id,
+0149:                 "link_for_pay": session.url,
+0150:             }
+0151: 
+0152:             if object_type == "course":
+0153:                 payment_data["paid_course"] = paid_object
+0154:             else:
+0155:                 payment_data["paid_lesson"] = paid_object
+0156: 
+0157:             payment = Payment.objects.create(**payment_data)
+0158: 
+0159:             return payment
+0160: 
+0161:         except Exception as e:
+0162:             raise serializers.ValidationError(f"РћС€РёР±РєР° РїСЂРё СЃРѕР·РґР°РЅРёРё РїР»Р°С‚РµР¶Р°: {str(e)}")
+0163: 
+0164: 
+0165: class UserPublicProfileSerializer(serializers.ModelSerializer):
+0166:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСѓР±Р»РёС‡РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РѕРіСЂР°РЅРёС‡РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ)"""
+0167: 
+0168:     class Meta:
+0169:         model = User
+0170:         fields = ["id", "username", "email", "first_name", "country", "city", "phone", "avatar", "role"]
+0171:         read_only_fields = ["id", "email", "role"]
+0172: 
+0173: 
+0174: class UserPrivateProfileSerializer(serializers.ModelSerializer):
+0175:     """РЎРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРёРІР°С‚РЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° (РІСЃРµ РґР°РЅРЅС‹Рµ)"""
+0176: 
+0177:     payments = PaymentSerializer(many=True, read_only=True)
+0178: 
+0179:     class Meta:
+0180:         model = User
+0181:         fields = [
+0182:             "id",
+0183:             "username",
+0184:             "email",
+0185:             "first_name",
+0186:             "last_name",
+0187:             "country",
+0188:             "city",
+0189:             "phone",
+0190:             "avatar",
+0191:             "role",
+0192:             "is_blocked",
+0193:             "payments",
+0194:             "is_verified",
+0195:             "date_joined",
+0196:         ]
+0197:         read_only_fields = ["id", "email", "role", "is_blocked", "is_verified", "date_joined"]
+0198: 
+0199: 
+0200: class UserApiRegistrationSerializer(serializers.ModelSerializer):
+0201:     class Meta:
+0202:         model = User
+0203:         fields = [
+0204:             "username",
+0205:             "email",
+0206:             "password",
+0207:             "first_name",
+0208:             "last_name",
+0209:             "country",
+0210:             "city",
+0211:             "phone",
+0212:             "avatar",
+0213:         ]
+0214: 
+0215:     def validate_username(self, value):
+0216:         """РџСЂРѕРІРµСЂРєР° СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚Рё username"""
+0217:         if User.objects.filter(username=value).exclude(id=self.instance.id if self.instance else None).exists():
+0218:             raise serializers.ValidationError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј РёРјРµРЅРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.")
+0219:         return value
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\services.py
 ================================================================================
-0001: import stripe
-0002: from dotenv import load_dotenv
-0003: from config.settings import STRIPE_API_KEY
-0004: from forex_python.converter import CurrencyRates
-0005: 
-0006: stripe.api_key = STRIPE_API_KEY
-0007: load_dotenv(override=True)
+0001: import requests
+0002: import stripe
+0003: from django.conf import settings
+0004: from dotenv import load_dotenv
+0005: from forex_python.converter import CurrencyRates
+0006: 
+0007: from config.settings import API_KEY_FOR_APILAYER, STRIPE_API_KEY
 0008: 
-0009: def convert_rub_into_usd(amount):
-0010:     """РљРѕРЅРІРµСЂС‚РёСЂСѓРµС‚ СЂСѓР±Р»Рё РІ РґРѕР»Р»Р°СЂС‹"""
-0011:     c = CurrencyRates()
-0012:     rub_rate = c.get_rate('RUB', 'USD')
-0013:     return round(amount * rub_rate, 2)
-0014: 
-0015: def create_stripe_price(amount):
-0016:     """РЎРѕР·РґР°РµС‚ С†РµРЅСѓ РІ СЃРµСЂРІРёСЃРµ stripe"""
-0017: 
-0018:     price = stripe.Price.create(
-0019:         currency="usd",
-0020:         unit_amount=amount*100,
-0021:         product_data={"name": "РљСѓСЂСЃ"},
-0022:     )
-0023:     return price
+0009: stripe.api_key = STRIPE_API_KEY
+0010: load_dotenv(override=True)
+0011: 
+0012: 
+0013: def create_stripe_product(name, description=None):
+0014:     """РЎРѕР·РґР°РµС‚ РїСЂРѕРґСѓРєС‚ РІ Stripe"""
+0015:     try:
+0016:         product = stripe.Product.create(
+0017:             name=name,
+0018:             description=description or name,
+0019:         )
+0020:         return product
+0021:     except stripe.error.StripeError as e:
+0022:         raise Exception(f"РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ РїСЂРѕРґСѓРєС‚Р° РІ Stripe: {str(e)}")
+0023: 
 0024: 
-0025: def create_stripe_session(price):
-0026:     """РЎРѕР·РґР°РµС‚ СЃРµСЃСЃРёСЋ РЅР° РѕРїР»Р°С‚Сѓ РІ stripe"""
-0027:     session = stripe.checkout.Session.create(
-0028:         success_url="http://127.0.0.1:8000/",
-0029:         line_items=[{"price": price.get('id'), "quantity": 1}],
-0030:         mode="payment",
-0031:     )
-0032:     return session.get('id'), session.get('url')
+0025: def create_stripe_price(amount, product_id, currency="usd"):
+0026:     """РЎРѕР·РґР°РµС‚ С†РµРЅСѓ РІ Stripe"""
+0027:     try:
+0028:         price = stripe.Price.create(
+0029:             currency=currency,
+0030:             unit_amount=int(amount * 100),  # РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј РІ С†РµРЅС‚С‹
+0031:             product=product_id,
+0032:         )
+0033:         return price
+0034:     except stripe.error.StripeError as e:
+0035:         raise Exception(f"РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ С†РµРЅС‹ РІ Stripe: {str(e)}")
+0036: 
+0037: 
+0038: def create_stripe_session(price_id, success_url=None, cancel_url=None):
+0039:     """РЎРѕР·РґР°РµС‚ СЃРµСЃСЃРёСЋ РѕРїР»Р°С‚С‹ РІ Stripe"""
+0040:     try:
+0041:         session = stripe.checkout.Session.create(
+0042:             success_url=success_url or "http://127.0.0.1:8000/payment/success/",
+0043:             cancel_url=cancel_url or "http://127.0.0.1:8000/payment/cancel/",
+0044:             line_items=[{"price": price_id, "quantity": 1}],
+0045:             mode="payment",
+0046:         )
+0047:         return session
+0048:     except stripe.error.StripeError as e:
+0049:         raise Exception(f"РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ СЃРµСЃСЃРёРё РІ Stripe: {str(e)}")
+0050: 
+0051: 
+0052: def convert_via_apilayer(amount_rub, target_currency="USD"):
+0053:     """РљРѕРЅРІРµСЂС‚Р°С†РёСЏ С‡РµСЂРµР· APILayer"""
+0054:     try:
+0055:         API_KEY = (API_KEY_FOR_APILAYER, None)
+0056:         if not API_KEY:
+0057:             print("API_KEY_FOR_APILAYER РЅРµ РЅР°СЃС‚СЂРѕРµРЅ")
+0058:             return None
+0059: 
+0060:         headers = {"apikey": API_KEY}
+0061:         url = f"https://api.apilayer.com/exchangerates_data/latest?symbols={target_currency}&base=RUB"
+0062: 
+0063:         response = requests.get(url, headers=headers, timeout=10)
+0064: 
+0065:         if response.status_code == 200:
+0066:             data = response.json()
+0067:             rate = data["rates"][target_currency]
+0068:             result = amount_rub * rate
+0069:             print(f"APILayer: 1 RUB = {rate} {target_currency}")
+0070:             print(f"APILayer: {amount_rub} RUB = {result:.2f} {target_currency}")
+0071:             return result
+0072:         else:
+0073:             print(f"APILayer HTTP РѕС€РёР±РєР°: {response.status_code}")
+0074:             return None
+0075: 
+0076:     except Exception as e:
+0077:         print(f"РћС€РёР±РєР° APILayer: {e}")
+0078:         return None
+0079: 
+0080: 
+0081: def convert_rub_to_usd(amount_rub):
+0082:     """
+0083:     РЈРјРЅР°СЏ РєРѕРЅРІРµСЂС‚Р°С†РёСЏ RUB РІ USD СЃ РЅРµСЃРєРѕР»СЊРєРёРјРё fallback-Р°РјРё
+0084:     """
+0085:     print(f"=== РќРђР§РђР›Рћ РљРћРќР’Р•Р РўРђР¦РР ===")
+0086:     print(f"РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј: {amount_rub} RUB в†’ USD")
+0087: 
+0088:     # 1. РџСЂРѕР±СѓРµРј forex-python (РѕСЃРЅРѕРІРЅРѕР№ СЃРїРѕСЃРѕР±)
+0089:     try:
+0090:         c = CurrencyRates()
+0091:         result = c.convert("RUB", "USD", amount_rub)
+0092:         print(f"forex-python: {amount_rub} RUB = {result:.2f} USD")
+0093:         return result
+0094:     except Exception as e:
+0095:         print(f"forex-python: {e}")
+0096: 
+0097:     # 2. РџСЂРѕР±СѓРµРј APILayer (РІС‚РѕСЂРѕР№ РІР°СЂРёР°РЅС‚)
+0098:     print("РџСЂРѕР±СѓРµРј APILayer...")
+0099:     apilayer_result = convert_via_apilayer(amount_rub, "USD")
+0100:     if apilayer_result is not None:
+0101:         return apilayer_result
+0102: 
+0103:     # 3. РџСЂРѕР±СѓРµРј Р¦РµРЅС‚СЂРѕР±Р°РЅРє Р РѕСЃСЃРёРё (С‚СЂРµС‚РёР№ РІР°СЂРёР°РЅС‚)
+0104:     print("РџСЂРѕР±СѓРµРј Р¦РµРЅС‚СЂРѕР±Р°РЅРє Р Р¤...")
+0105:     try:
+0106:         response = requests.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=5)
+0107:         data = response.json()
+0108:         usd_rate = data["Valute"]["USD"]["Value"]
+0109:         result = amount_rub / usd_rate
+0110:         print(f"Р¦Р‘ Р Р¤: 1 USD = {usd_rate} RUB")
+0111:         print(f"Р¦Р‘ Р Р¤: {amount_rub} RUB = {result:.2f} USD")
+0112:         return result
+0113:     except Exception as e:
+0114:         print(f"Р¦Р‘ Р Р¤: {e}")
+0115: 
+0116:     # 4. Р¤РёРєСЃРёСЂРѕРІР°РЅРЅС‹Р№ РєСѓСЂСЃ (РїРѕСЃР»РµРґРЅРёР№ fallback)
+0117:     exchange_rate = getattr(settings, "EXCHANGE_RATE_USD_RUB", 80.0)
+0118:     result = amount_rub / exchange_rate
+0119:     print(f"Р¤РёРєСЃРёСЂРѕРІР°РЅРЅС‹Р№ РєСѓСЂСЃ: 1 USD = {exchange_rate} RUB")
+0120:     print(f"Р РµР·СѓР»СЊС‚Р°С‚: {amount_rub} RUB = {result:.2f} USD")
+0121:     print("=== РљРћРќР’Р•Р РўРђР¦РРЇ Р—РђР’Р•Р РЁР•РќРђ ===")
+0122: 
+0123:     return result
+0124: 
+0125: 
+0126: def get_payment_status(session_id):
+0127:     """РџРѕР»СѓС‡Р°РµС‚ СЃС‚Р°С‚СѓСЃ РїР»Р°С‚РµР¶Р° РёР· Stripe"""
+0128:     try:
+0129:         session = stripe.checkout.Session.retrieve(session_id)
+0130:         return session.payment_status
+0131:     except stripe.error.StripeError as e:
+0132:         return "unknown"
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\tests.py
@@ -2689,73 +2961,73 @@
 0011:     PaymentDestroyAPIView,
 0012:     PaymentListAPIView,
 0013:     PaymentRetrieveAPIView,
-0014:     PaymentUpdateAPIView,
-0015:     UserCreateApiView,
-0016:     UserListAPIView,
-0017:     UserListHTMLView,
-0018:     UserListView,
-0019:     UserProfileRetrieveAPIView,
-0020:     UserProfileUpdateAPIView,
-0021:     UserProfileUpdateView,
-0022:     UserRegisterView,
-0023:     email_verification,
-0024:     toggle_user_block
-0025: )
-0026: 
-0027: app_name = "users"
-0028: 
-0029: urlpatterns = [
-0030:     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
-0031:     path("logout/", CustomLogoutView.as_view(), name="logout"),
-0032:     path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
-0033:     path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
-0034:     path("email-confirm/<str:token>/", email_verification, name="email_verification"),
-0035:     path(
-0036:         "password_reset/",
-0037:         auth_views.PasswordResetView.as_view(
-0038:             form_class=CustomPasswordResetForm,
-0039:             template_name="users/password_reset.html",
-0040:             email_template_name="users/password_reset_email.html",
-0041:             subject_template_name="users/password_reset_subject.txt",
-0042:             success_url=reverse_lazy("users:password_reset_done"),
-0043:         ),
-0044:         name="password_reset",
-0045:     ),
-0046:     path(
-0047:         "password_reset/done/",
-0048:         auth_views.PasswordResetDoneView.as_view(
-0049:             template_name="users/password_reset_done.html",
-0050:         ),
-0051:         name="password_reset_done",
-0052:     ),
-0053:     path(
-0054:         "reset/<uidb64>/<token>/",
-0055:         auth_views.PasswordResetConfirmView.as_view(
-0056:             template_name="users/password_reset_confirm.html",
-0057:             success_url=reverse_lazy("users:password_reset_complete"),
-0058:         ),
-0059:         name="password_reset_confirm",
-0060:     ),
-0061:     path(
-0062:         "reset/done/",
-0063:         auth_views.PasswordResetCompleteView.as_view(
-0064:             template_name="users/password_reset_complete.html",
-0065:         ),
-0066:         name="password_reset_complete",
-0067:     ),
-0068:     path("manager/users/", UserListView.as_view(), name="user_list"),
-0069:     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
-0070:     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
-0071:     path("api/my-profile/", UserProfileRetrieveAPIView.as_view(), name="api_my_profile"),
-0072:     path("api/my-profile/update/", UserProfileUpdateAPIView.as_view(), name="api_my_profile_update"),
-0073:     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
-0074:     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
-0075:     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
-0076:     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
-0077:     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
-0078:     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
-0079:     path("payments/<int:pk>/update/", PaymentUpdateAPIView.as_view(), name="payment-update"),
-0080:     path("payments/<int:pk>/delete/", PaymentDestroyAPIView.as_view(), name="payment-delete"),
+0014:     PaymentStatusAPIView,
+0015:     PaymentUpdateAPIView,
+0016:     UserCreateApiView,
+0017:     UserListAPIView,
+0018:     UserListHTMLView,
+0019:     UserListView,
+0020:     UserProfileRetrieveAPIView,
+0021:     UserProfileUpdateAPIView,
+0022:     UserProfileUpdateView,
+0023:     UserRegisterView,
+0024:     email_verification,
+0025:     toggle_user_block
+0026: )
+0027: 
+0028: app_name = "users"
+0029: 
+0030: urlpatterns = [
+0031:     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
+0032:     path("logout/", CustomLogoutView.as_view(), name="logout"),
+0033:     path("register/", UserRegisterView.as_view(template_name="users/registration.html"), name="register"),
+0034:     path("profile/edit/", UserProfileUpdateView.as_view(), name="profile_edit"),
+0035:     path("email-confirm/<str:token>/", email_verification, name="email_verification"),
+0036:     path(
+0037:         "password_reset/",
+0038:         auth_views.PasswordResetView.as_view(
+0039:             form_class=CustomPasswordResetForm,
+0040:             template_name="users/password_reset.html",
+0041:             email_template_name="users/password_reset_email.html",
+0042:             subject_template_name="users/password_reset_subject.txt",
+0043:             success_url=reverse_lazy("users:password_reset_done"),
+0044:         ),
+0045:         name="password_reset",
+0046:     ),
+0047:     path(
+0048:         "password_reset/done/",
+0049:         auth_views.PasswordResetDoneView.as_view(
+0050:             template_name="users/password_reset_done.html",
+0051:         ),
+0052:         name="password_reset_done",
+0053:     ),
+0054:     path(
+0055:         "reset/<uidb64>/<token>/",
+0056:         auth_views.PasswordResetConfirmView.as_view(
+0057:             template_name="users/password_reset_confirm.html",
+0058:             success_url=reverse_lazy("users:password_reset_complete"),
+0059:         ),
+0060:         name="password_reset_confirm",
+0061:     ),
+0062:     path(
+0063:         "reset/done/",
+0064:         auth_views.PasswordResetCompleteView.as_view(
+0065:             template_name="users/password_reset_complete.html",
+0066:         ),
+0067:         name="password_reset_complete",
+0068:     ),
+0069:     path("manager/users/", UserListView.as_view(), name="user_list"),
+0070:     path("manager/users/toggle_block/<int:user_id>/", toggle_user_block, name="toggle_user_block"),
+0071:     path("api/users/", UserListAPIView.as_view(), name="api_user_list"),
+0072:     path("api/my-profile/", UserProfileRetrieveAPIView.as_view(), name="api_my_profile"),
+0073:     path("api/my-profile/update/", UserProfileUpdateAPIView.as_view(), name="api_my_profile_update"),
+0074:     path("api/profile/<int:pk>/", UserProfileRetrieveAPIView.as_view(), name="api_profile_detail"),
+0075:     path("api/profile/<int:pk>/update/", UserProfileUpdateAPIView.as_view(), name="api_profile_update_detail"),
+0076:     path("manager/users/html/", UserListHTMLView.as_view(), name="user_list_html"),
+0077:     path("payments/", PaymentListAPIView.as_view(), name="payment-list"),
+0078:     path("payments/create/", PaymentCreateAPIView.as_view(), name="payment-create"),
+0079:     path("payments/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment-detail"),
+0080:     path("payments/<int:pk>/status/", PaymentStatusAPIView.as_view(), name="payment-status"),
 0081:     path("api/login/", TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name="token_obtain_pair"),
 0082:     path("api/token/refresh/", TokenRefreshView.as_view(permission_classes=(AllowAny,)), name="token_refresh"),
 0083:     path("api/register/", UserCreateApiView.as_view(), name="user_api_register"),
@@ -2779,7 +3051,7 @@
 0013: from django.views.decorators.cache import cache_page
 0014: from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 0015: from django_filters.rest_framework import DjangoFilterBackend
-0016: from rest_framework import generics, permissions
+0016: from rest_framework import generics, permissions, status
 0017: from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 0018: from rest_framework.filters import OrderingFilter
 0019: from rest_framework.response import Response
@@ -2790,12 +3062,12 @@
 0024: from .models import Payment, User
 0025: from .permissions import CanEditUserProfile, CanViewUserList
 0026: from .serializers import (
-0027:     PaymentSerializer,
-0028:     UserApiRegistrationSerializer,
-0029:     UserPrivateProfileSerializer,
-0030:     UserPublicProfileSerializer
-0031: )
-0032: from .services import convert_rub_into_usd, create_stripe_session, create_stripe_price
+0027:     PaymentCreateSerializer,
+0028:     PaymentSerializer,
+0029:     UserApiRegistrationSerializer,
+0030:     UserPrivateProfileSerializer,
+0031:     UserPublicProfileSerializer
+0032: )
 0033: 
 0034: 
 0035: class CustomLogoutView(LogoutView):
@@ -2995,64 +3267,96 @@
 0229:         return context
 0230: 
 0231: 
-0232: class PaymentListAPIView(generics.ListAPIView):
-0233:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР»Р°С‚РµР¶РµР№ СЃ С„РёР»СЊС‚СЂР°С†РёРµР№"""
-0234: 
-0235:     queryset = Payment.objects.all()
-0236:     serializer_class = PaymentSerializer
-0237:     filter_backends = [DjangoFilterBackend, OrderingFilter]
-0238:     filterset_class = PaymentFilter
-0239:     ordering_fields = ["payment_date", "amount"]
-0240:     ordering = ["-payment_date"]  # СЃРѕСЂС‚РёСЂРѕРІРєР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+0232: class UserCreateApiView(generics.CreateAPIView):
+0233:     serializer_class = UserApiRegistrationSerializer
+0234:     queryset = User.objects.all()
+0235:     permission_classes = (permissions.AllowAny,)
+0236: 
+0237:     def perform_create(self, serializer):
+0238:         user = serializer.save(is_active=True)
+0239:         user.set_password(user.password)
+0240:         user.save()
 0241: 
 0242: 
-0243: class PaymentRetrieveAPIView(generics.RetrieveAPIView):
-0244:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРµС‚Р°Р»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РїР»Р°С‚РµР¶Рµ"""
+0243: class PaymentListAPIView(generics.ListAPIView):
+0244:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР»Р°С‚РµР¶РµР№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ"""
 0245: 
-0246:     queryset = Payment.objects.all()
-0247:     serializer_class = PaymentSerializer
-0248: 
-0249: 
-0250: class PaymentCreateAPIView(generics.CreateAPIView):
-0251:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РЅРѕРІРѕРіРѕ РїР»Р°С‚РµР¶Р°"""
+0246:     serializer_class = PaymentSerializer
+0247:     permission_classes = [permissions.IsAuthenticated]
+0248:     filter_backends = [DjangoFilterBackend, OrderingFilter]
+0249:     filterset_class = PaymentFilter
+0250:     ordering_fields = ["payment_date", "amount"]
+0251:     ordering = ["-payment_date"]
 0252: 
-0253:     queryset = Payment.objects.all()
-0254:     serializer_class = PaymentSerializer
+0253:     def get_queryset(self):
+0254:         return Payment.objects.filter(user=self.request.user)
 0255: 
-0256:     def perform_create(self, serializer):
-0257:         payment = serializer.save(user=self.request.user)
-0258:         user = self.request.user
-0259:         amount_in_usd = convert_rub_into_usd(payment.amount)
-0260:         price = create_stripe_price(amount_in_usd)
-0261:         session_id, payment_link = create_stripe_session(price)
-0262:         payment.session_id = session_id
-0263:         payment.payment_link = payment_link
-0264:         payment.save()
+0256: 
+0257: class PaymentRetrieveAPIView(generics.RetrieveAPIView):
+0258:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРµС‚Р°Р»РµР№ РїР»Р°С‚РµР¶Р°"""
+0259: 
+0260:     serializer_class = PaymentSerializer
+0261:     permission_classes = [permissions.IsAuthenticated]
+0262: 
+0263:     def get_queryset(self):
+0264:         return Payment.objects.filter(user=self.request.user)
 0265: 
 0266: 
-0267: class PaymentUpdateAPIView(generics.UpdateAPIView):
-0268:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
+0267: class PaymentStatusAPIView(generics.RetrieveAPIView):
+0268:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РїСЂРѕРІРµСЂРєРё СЃС‚Р°С‚СѓСЃР° РїР»Р°С‚РµР¶Р°"""
 0269: 
-0270:     queryset = Payment.objects.all()
-0271:     serializer_class = PaymentSerializer
-0272: 
-0273: 
-0274: class PaymentDestroyAPIView(generics.DestroyAPIView):
-0275:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
-0276: 
-0277:     queryset = Payment.objects.all()
-0278:     serializer_class = PaymentSerializer
+0270:     permission_classes = [permissions.IsAuthenticated]
+0271: 
+0272:     def retrieve(self, request, *args, **kwargs):
+0273:         from .services import get_payment_status
+0274: 
+0275:         payment = self.get_object()
+0276:         status = get_payment_status(payment.session_id)
+0277: 
+0278:         return Response({"payment_id": payment.id, "status": status, "paid": status == "paid"})
 0279: 
-0280: 
-0281: class UserCreateApiView(generics.CreateAPIView):
-0282:     serializer_class = UserApiRegistrationSerializer
-0283:     queryset = User.objects.all()
-0284:     permission_classes = (permissions.AllowAny,)
-0285: 
-0286:     def perform_create(self, serializer):
-0287:         user = serializer.save(is_active=True)
-0288:         user.set_password(user.password)
-0289:         user.save()
+0280:     def get_queryset(self):
+0281:         return Payment.objects.filter(user=self.request.user)
+0282: 
+0283: 
+0284: class PaymentCreateAPIView(generics.CreateAPIView):
+0285:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РїР»Р°С‚РµР¶Р° С‡РµСЂРµР· Stripe"""
+0286: 
+0287:     queryset = Payment.objects.all()
+0288:     serializer_class = PaymentCreateSerializer
+0289:     permission_classes = [permissions.IsAuthenticated]
+0290: 
+0291:     def create(self, request, *args, **kwargs):
+0292:         try:
+0293:             serializer = self.get_serializer(data=request.data)
+0294:             serializer.is_valid(raise_exception=True)
+0295:             self.perform_create(serializer)
+0296:             headers = self.get_success_headers(serializer.data)
+0297: 
+0298:             # Р’РѕР·РІСЂР°С‰Р°РµРј РїРѕР»РЅС‹Р№ РѕС‚РІРµС‚ СЃРѕ РІСЃРµРјРё РїРѕР»СЏРјРё
+0299:             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+0300: 
+0301:         except Exception as e:
+0302:             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+0303: 
+0304:     def perform_create(self, serializer):
+0305:         """РЎРѕР·РґР°РµС‚ РїР»Р°С‚РµР¶ СЃ РїСЂРёРІСЏР·РєРѕР№ Рє РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ"""
+0306:         # User Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїРѕРґСЃС‚Р°РІРёС‚СЃСЏ С‡РµСЂРµР· СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂ
+0307:         serializer.save()
+0308: 
+0309: 
+0310: class PaymentUpdateAPIView(generics.UpdateAPIView):
+0311:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
+0312: 
+0313:     queryset = Payment.objects.all()
+0314:     serializer_class = PaymentSerializer
+0315: 
+0316: 
+0317: class PaymentDestroyAPIView(generics.DestroyAPIView):
+0318:     """Р­РЅРґРїРѕРёРЅС‚ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ РїР»Р°С‚РµР¶Р°"""
+0319: 
+0320:     queryset = Payment.objects.all()
+0321:     serializer_class = PaymentSerializer
 
 ================================================================================
 ФАЙЛ: D:\python\django\drf_home_works\users\__init__.py
