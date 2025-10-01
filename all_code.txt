@@ -1,5 +1,5 @@
 ﻿================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\asgi.py
+: D:\python\django\drf_home_works\config\asgi.py
 ================================================================================
 0001: """
 0002: ASGI config for config project.
@@ -19,30 +19,24 @@
 0016: application = get_asgi_application()
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\celery.py
+: D:\python\django\drf_home_works\config\celery.py
 ================================================================================
 0001: import os
-0002: 
-0003: from celery import Celery
-0004: 
-0005: # Set the default Django settings module for the 'celery' program.
-0006: os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-0007: 
-0008: app = Celery('config')
-0009: 
+0002: from celery import Celery
+0003: 
+0004: os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+0005: 
+0006: app = Celery('config')
+0007: app.config_from_object('django.conf:settings', namespace='CELERY')
+0008: 
+0009: app.autodiscover_tasks(['lms', 'users'])
 0010: 
-0011: app.config_from_object('django.conf:settings', namespace='CELERY')
-0012: 
-0013: # Load task modules from all registered Django apps.
-0014: app.autodiscover_tasks()
-0015: 
-0016: 
-0017: @app.task(bind=True, ignore_result=True)
-0018: def debug_task(self):
-0019:     print(f'Request: {self.request!r}')
+0011: @app.task(bind=True, ignore_result=True)
+0012: def debug_task(self):
+0013:     print(f'Request: {self.request!r}')
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\celery_beat_schedule.py
+: D:\python\django\drf_home_works\config\celery_beat_schedule.py
 ================================================================================
 0001: from celery.schedules import crontab
 0002: 
@@ -59,10 +53,19 @@
 0013:         'task': 'lms.tasks.send_newsletter',
 0014:         'schedule': crontab(day_of_month=1, hour=10, minute=0),  # 1-РіРѕ С‡РёСЃР»Р° РєР°Р¶РґРѕРіРѕ РјРµСЃСЏС†Р° РІ 10:00
 0015:     },
-0016: }
+0016: 'check-course-updates-hourly': {
+0017:         'task': 'lms.tasks.check_lesson_updates',
+0018:         'schedule': crontab(minute=0),  # РљР°Р¶РґС‹Р№ С‡Р°СЃ
+0019:     },
+0020: 
+0021:     'send-course-update-notifications': {
+0022:         'task': 'lms.tasks.send_course_update_notification',
+0023:         'schedule': crontab(hour=9, minute=0),  # Р•Р¶РµРґРЅРµРІРЅРѕ РІ 9:00
+0024:     },
+0025: }
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\settings.py
+: D:\python\django\drf_home_works\config\settings.py
 ================================================================================
 0001: import os
 0002: from datetime import timedelta
@@ -82,183 +85,205 @@
 0016: # SECURITY WARNING: don't run with debug turned on in production!
 0017: DEBUG = True if os.getenv("DEBUG") == "True" else False
 0018: 
-0019: ALLOWED_HOSTS = []
-0020: 
-0021: # Application definition
-0022: 
-0023: INSTALLED_APPS = [
-0024:     "django.contrib.admin",
-0025:     "django.contrib.auth",
-0026:     "django.contrib.contenttypes",
-0027:     "django.contrib.sessions",
-0028:     "django.contrib.messages",
-0029:     "django.contrib.staticfiles",
-0030:     "django_filters",
-0031:     "rest_framework",
-0032:     "rest_framework_simplejwt",
-0033:     "users",
-0034:     "lms",
-0035:     "django_extensions",
-0036:     "drf_yasg",
-0037:     'django_celery_beat',
-0038:     'django_celery_results',
-0039: ]
-0040: 
-0041: MIDDLEWARE = [
-0042:     "django.middleware.security.SecurityMiddleware",
-0043:     "django.contrib.sessions.middleware.SessionMiddleware",
-0044:     "django.middleware.common.CommonMiddleware",
-0045:     "django.middleware.csrf.CsrfViewMiddleware",
-0046:     "django.contrib.auth.middleware.AuthenticationMiddleware",
-0047:     "django.contrib.messages.middleware.MessageMiddleware",
-0048:     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-0049: ]
-0050: 
-0051: ROOT_URLCONF = "config.urls"
-0052: 
-0053: TEMPLATES = [
-0054:     {
-0055:         "BACKEND": "django.template.backends.django.DjangoTemplates",
-0056:         "DIRS": [BASE_DIR / "templates"],
-0057:         "APP_DIRS": True,
-0058:         "OPTIONS": {
-0059:             "context_processors": [
-0060:                 "django.template.context_processors.request",
-0061:                 "django.contrib.auth.context_processors.auth",
-0062:                 "django.contrib.messages.context_processors.messages",
-0063:             ],
-0064:         },
-0065:     },
-0066: ]
-0067: 
-0068: WSGI_APPLICATION = "config.wsgi.application"
+0019: 
+0020: def get_database_host():
+0021:     """Р•СЃР»Рё РјС‹ РІ Docker РєРѕРЅС‚РµР№РЅРµСЂРµ, РёСЃРїРѕР»СЊР·СѓРµРј 'db'
+0022:        РџСЂРѕРІРµСЂСЏРµРј РїРѕ РЅР°Р»РёС‡РёСЋ Docker-СЃРїРµС†РёС„РёС‡РЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… РѕРєСЂСѓР¶РµРЅРёСЏ"""
+0023:     if os.getenv('DOCKER_CONTAINER') or os.path.exists('/.dockerenv'):
+0024:         return os.getenv('DOCKER_HOST')
+0025:     else:
+0026:         return os.getenv('HOST')
+0027: 
+0028: 
+0029: def get_redis_host():
+0030:     """Р•СЃР»Рё РјС‹ РІ Docker РєРѕРЅС‚РµР№РЅРµСЂРµ, РёСЃРїРѕР»СЊР·СѓРµРј 'redis'
+0031:        РџСЂРѕРІРµСЂСЏРµРј РїРѕ РЅР°Р»РёС‡РёСЋ Docker-СЃРїРµС†РёС„РёС‡РЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… РѕРєСЂСѓР¶РµРЅРёСЏ"""
+0032:     if os.getenv('DOCKER_CONTAINER') or os.path.exists('/.dockerenv'):
+0033:         return 'redis'
+0034:     else:
+0035:         return os.getenv('HOST')
+0036: 
+0037: 
+0038: ALLOWED_HOSTS = []
+0039: 
+0040: # Application definition
+0041: 
+0042: INSTALLED_APPS = [
+0043:     "django.contrib.admin",
+0044:     "django.contrib.auth",
+0045:     "django.contrib.contenttypes",
+0046:     "django.contrib.sessions",
+0047:     "django.contrib.messages",
+0048:     "django.contrib.staticfiles",
+0049:     "django_filters",
+0050:     "rest_framework",
+0051:     "rest_framework_simplejwt",
+0052:     "users",
+0053:     "lms",
+0054:     "django_extensions",
+0055:     "drf_yasg",
+0056:     'django_celery_beat',
+0057:     'django_celery_results',
+0058: ]
+0059: 
+0060: MIDDLEWARE = [
+0061:     "django.middleware.security.SecurityMiddleware",
+0062:     "django.contrib.sessions.middleware.SessionMiddleware",
+0063:     "django.middleware.common.CommonMiddleware",
+0064:     "django.middleware.csrf.CsrfViewMiddleware",
+0065:     "django.contrib.auth.middleware.AuthenticationMiddleware",
+0066:     "django.contrib.messages.middleware.MessageMiddleware",
+0067:     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+0068: ]
 0069: 
-0070: # Database
-0071: # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-0072: 
-0073: DATABASES = {
-0074:     "default": {
-0075:         "ENGINE": "django.db.backends.postgresql_psycopg2",
-0076:         "NAME": os.getenv("NAME"),
-0077:         "USER": os.getenv("USER"),
-0078:         "PASSWORD": os.getenv("DB_PASSWORD"),
-0079:         "HOST": os.getenv("HOST"),
-0080:         "PORT": os.getenv("PORT"),
-0081:     }
-0082: }
-0083: 
-0084: # Password validation
-0085: # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+0070: ROOT_URLCONF = "config.urls"
+0071: 
+0072: TEMPLATES = [
+0073:     {
+0074:         "BACKEND": "django.template.backends.django.DjangoTemplates",
+0075:         "DIRS": [BASE_DIR / "templates"],
+0076:         "APP_DIRS": True,
+0077:         "OPTIONS": {
+0078:             "context_processors": [
+0079:                 "django.template.context_processors.request",
+0080:                 "django.contrib.auth.context_processors.auth",
+0081:                 "django.contrib.messages.context_processors.messages",
+0082:             ],
+0083:         },
+0084:     },
+0085: ]
 0086: 
-0087: AUTH_PASSWORD_VALIDATORS = [
-0088:     {
-0089:         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-0090:     },
-0091:     {
-0092:         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-0093:     },
-0094:     {
-0095:         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-0096:     },
-0097:     {
-0098:         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-0099:     },
-0100: ]
-0101: 
-0102: REST_FRAMEWORK = {
-0103:     "DEFAULT_FILTER_BACKENDS": [
-0104:         "django_filters.rest_framework.DjangoFilterBackend",
-0105:         "rest_framework.filters.OrderingFilter",
-0106:     ],
-0107:     "DEFAULT_AUTHENTICATION_CLASSES": [
-0108:         "rest_framework_simplejwt.authentication.JWTAuthentication",
-0109:         "rest_framework.authentication.SessionAuthentication",
-0110:         "rest_framework.authentication.TokenAuthentication",
-0111:     ],
-0112:     "DEFAULT_PERMISSION_CLASSES": [
-0113:         "rest_framework.permissions.IsAuthenticated",
-0114:     ],
-0115: }
-0116: 
-0117: # Internationalization
-0118: # https://docs.djangoproject.com/en/5.2/topics/i18n/
-0119: 
-0120: LANGUAGE_CODE = "en-us"
-0121: 
-0122: USE_I18N = True
-0123: 
-0124: USE_TZ = True
-0125: 
-0126: TIME_ZONE = "Europe/Moscow"
-0127: 
-0128: # Static files (CSS, JavaScript, Images)
-0129: # https://docs.djangoproject.com/en/5.2/howto/static-files/
-0130: 
-0131: STATIC_URL = "static/"
-0132: STATICFILES_DIRS = (BASE_DIR / "static",)
-0133: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-0134: STATIC_ROOT = BASE_DIR / "staticfiles"
+0087: WSGI_APPLICATION = "config.wsgi.application"
+0088: 
+0089: # Database
+0090: # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+0091: DB_HOST = os.getenv("HOST", "localhost")
+0092: DATABASES = {
+0093:     "default": {
+0094:         "ENGINE": "django.db.backends.postgresql_psycopg2",
+0095:         "NAME": os.getenv("NAME"),
+0096:         "USER": os.getenv("USER"),
+0097:         "PASSWORD": os.getenv("DB_PASSWORD"),
+0098:         "HOST": get_database_host(),
+0099:         "PORT": os.getenv("PORT", "5432"),
+0100:     }
+0101: }
+0102: 
+0103: # Password validation
+0104: # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+0105: 
+0106: AUTH_PASSWORD_VALIDATORS = [
+0107:     {
+0108:         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+0109:     },
+0110:     {
+0111:         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+0112:     },
+0113:     {
+0114:         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+0115:     },
+0116:     {
+0117:         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+0118:     },
+0119: ]
+0120: 
+0121: REST_FRAMEWORK = {
+0122:     "DEFAULT_FILTER_BACKENDS": [
+0123:         "django_filters.rest_framework.DjangoFilterBackend",
+0124:         "rest_framework.filters.OrderingFilter",
+0125:     ],
+0126:     "DEFAULT_AUTHENTICATION_CLASSES": [
+0127:         "rest_framework_simplejwt.authentication.JWTAuthentication",
+0128:         "rest_framework.authentication.SessionAuthentication",
+0129:         "rest_framework.authentication.TokenAuthentication",
+0130:     ],
+0131:     "DEFAULT_PERMISSION_CLASSES": [
+0132:         "rest_framework.permissions.IsAuthenticated",
+0133:     ],
+0134: }
 0135: 
-0136: # Default primary key field type
-0137: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+0136: # Internationalization
+0137: # https://docs.djangoproject.com/en/5.2/topics/i18n/
 0138: 
-0139: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+0139: LANGUAGE_CODE = "en-us"
 0140: 
-0141: MEDIA_URL = "media/"
+0141: USE_I18N = True
 0142: 
-0143: MEDIA_ROOT = BASE_DIR / "media"
+0143: USE_TZ = True
 0144: 
-0145: AUTH_USER_MODEL = "users.User"
+0145: TIME_ZONE = "Europe/Moscow"
 0146: 
-0147: LOGIN_REDIRECT_URL = "home"
-0148: LOGOUT_REDIRECT_URL = "home"
-0149: LOGIN_URL = "users:login"
-0150: 
-0151: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-0152: EMAIL_HOST = "smtp.yandex.ru"
-0153: EMAIL_PORT = 465
-0154: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-0155: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-0156: EMAIL_USE_TLS = False
-0157: EMAIL_USE_SSL = True
-0158: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
-0159: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
-0160: 
-0161: CACHES = {
-0162:     "default": {
-0163:         "BACKEND": "django_redis.cache.RedisCache",
-0164:         "LOCATION": "redis://127.0.0.1:6379/2",
-0165:         "OPTIONS": {
-0166:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-0167:         },
-0168:         "KEY_PREFIX": "mail_service_",
-0169:         "TIMEOUT": 60 * 15,  # 15 РјРёРЅСѓС‚
-0170:     }
-0171: }
-0172: 
-0173: SIMPLE_JWT = {
-0174:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
-0175:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-0176: }
-0177: 
-0178: STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+0147: # Static files (CSS, JavaScript, Images)
+0148: # https://docs.djangoproject.com/en/5.2/howto/static-files/
+0149: 
+0150: STATIC_URL = "static/"
+0151: STATICFILES_DIRS = (BASE_DIR / "static",)
+0152: STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+0153: STATIC_ROOT = BASE_DIR / "staticfiles"
+0154: 
+0155: # Default primary key field type
+0156: # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+0157: 
+0158: DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+0159: 
+0160: MEDIA_URL = "media/"
+0161: 
+0162: MEDIA_ROOT = BASE_DIR / "media"
+0163: 
+0164: AUTH_USER_MODEL = "users.User"
+0165: 
+0166: LOGIN_REDIRECT_URL = "home"
+0167: LOGOUT_REDIRECT_URL = "home"
+0168: LOGIN_URL = "users:login"
+0169: 
+0170: EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+0171: EMAIL_HOST = "smtp.yandex.ru"
+0172: EMAIL_PORT = 465
+0173: EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+0174: EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+0175: EMAIL_USE_TLS = False
+0176: EMAIL_USE_SSL = True
+0177: DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р’Р°С€ yandex email
+0178: SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Р”Р»СЏ РѕС€РёР±РѕРє
 0179: 
-0180: API_KEY_FOR_APILAYER = os.getenv("API_KEY_FOR_APILAYER", "")
+0180: REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 0181: 
-0182: 
-0183: CELERY_TASK_TRACK_STARTED = True
-0184: CELERY_TASK_TIME_LIMIT = 30 * 60
-0185: CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
-0186: CELERY_RESULT_BACKEND = 'django-db'
-0187: CELERY_ACCEPT_CONTENT = ['json']
-0188: CELERY_TASK_SERIALIZER = 'json'
-0189: CELERY_RESULT_SERIALIZER = 'json'
-0190: CELERY_TIMEZONE = TIME_ZONE
-0191: CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-0192: CELERY_BEAT_SCHEDULE = CELERY_BEAT_SCHEDULE
+0182: CACHES = {
+0183:     "default": {
+0184:         "BACKEND": "django_redis.cache.RedisCache",
+0185:         "LOCATION": f"redis://{get_redis_host()}:6379/2",
+0186:         "OPTIONS": {
+0187:             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+0188:         },
+0189:         "KEY_PREFIX": "mail_service_",
+0190:         "TIMEOUT": 60 * 15,
+0191:     }
+0192: }
+0193: 
+0194: SIMPLE_JWT = {
+0195:     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60 * 2),
+0196:     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+0197: }
+0198: 
+0199: STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+0200: 
+0201: API_KEY_FOR_APILAYER = os.getenv("API_KEY_FOR_APILAYER", "")
+0202: 
+0203: CELERY_TASK_TRACK_STARTED = True
+0204: CELERY_TASK_TIME_LIMIT = 30 * 60
+0205: CELERY_BROKER_URL = f'redis://{get_redis_host()}:6379/0'
+0206: CELERY_RESULT_BACKEND = 'django-db'
+0207: CELERY_ACCEPT_CONTENT = ['json']
+0208: CELERY_TASK_SERIALIZER = 'json'
+0209: CELERY_RESULT_SERIALIZER = 'json'
+0210: CELERY_TIMEZONE = TIME_ZONE
+0211: CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+0212: CELERY_BEAT_SCHEDULE = CELERY_BEAT_SCHEDULE
+0213: 
+0214: INACTIVE_USER_DAYS = 30  # РљРѕР»РёС‡РµСЃС‚РІРѕ РґРЅРµР№ РЅРµР°РєС‚РёРІРЅРѕСЃС‚Рё РґР»СЏ Р±Р»РѕРєРёСЂРѕРІРєРё
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\urls.py
+: D:\python\django\drf_home_works\config\urls.py
 ================================================================================
 0001: from django.conf import settings
 0002: from django.conf.urls.static import static
@@ -296,7 +321,7 @@
 0034: ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\wsgi.py
+: D:\python\django\drf_home_works\config\wsgi.py
 ================================================================================
 0001: """
 0002: WSGI config for config project.
@@ -316,14 +341,14 @@
 0016: application = get_wsgi_application()
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\config\__init__.py
+: D:\python\django\drf_home_works\config\__init__.py
 ================================================================================
 0001: from .celery import app as celery_app
 0002: 
 0003: __all__ = ('celery_app',)
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\management\commands\load_lms_data.py
+: D:\python\django\drf_home_works\lms\management\commands\load_lms_data.py
 ================================================================================
 0001: from django.core.management import call_command
 0002: from django.core.management.base import BaseCommand
@@ -373,15 +398,15 @@
 0046:                 )
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\management\commands\__init__.py
+: D:\python\django\drf_home_works\lms\management\commands\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\management\__init__.py
+: D:\python\django\drf_home_works\lms\management\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\migrations\0001_initial.py
+: D:\python\django\drf_home_works\lms\migrations\0001_initial.py
 ================================================================================
 0001: # Generated by Django 5.2.5 on 2025-08-29 06:49
 0002: 
@@ -463,7 +488,7 @@
 0078:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\migrations\0002_course_owner_lesson_owner.py
+: D:\python\django\drf_home_works\lms\migrations\0002_course_owner_lesson_owner.py
 ================================================================================
 0001: # Generated by Django 5.2.5 on 2025-09-05 06:15
 0002: 
@@ -507,7 +532,7 @@
 0040:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\migrations\0003_subscription.py
+: D:\python\django\drf_home_works\lms\migrations\0003_subscription.py
 ================================================================================
 0001: # Generated by Django 5.2.6 on 2025-09-07 17:33
 0002: 
@@ -558,11 +583,59 @@
 0047:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\migrations\__init__.py
+: D:\python\django\drf_home_works\lms\migrations\0004_course_updated_at.py
+================================================================================
+0001: # Generated by Django 5.2.6 on 2025-09-13 10:21
+0002: 
+0003: from django.db import migrations, models
+0004: 
+0005: 
+0006: class Migration(migrations.Migration):
+0007: 
+0008:     dependencies = [
+0009:         ("lms", "0003_subscription"),
+0010:     ]
+0011: 
+0012:     operations = [
+0013:         migrations.AddField(
+0014:             model_name="course",
+0015:             name="updated_at",
+0016:             field=models.DateTimeField(
+0017:                 auto_now=True,
+0018:                 help_text="РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ РїСЂРё РёР·РјРµРЅРµРЅРёРё РєСѓСЂСЃР°",
+0019:                 verbose_name="Р”Р°С‚Р° РїРѕСЃР»РµРґРЅРµРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ",
+0020:             ),
+0021:         ),
+0022:     ]
+
+================================================================================
+: D:\python\django\drf_home_works\lms\migrations\0005_lesson_updated_at.py
+================================================================================
+0001: # Generated by Django 5.2.6 on 2025-09-13 10:28
+0002: 
+0003: from django.db import migrations, models
+0004: 
+0005: 
+0006: class Migration(migrations.Migration):
+0007: 
+0008:     dependencies = [
+0009:         ("lms", "0004_course_updated_at"),
+0010:     ]
+0011: 
+0012:     operations = [
+0013:         migrations.AddField(
+0014:             model_name="lesson",
+0015:             name="updated_at",
+0016:             field=models.DateTimeField(auto_now=True, verbose_name="Р”Р°С‚Р° РїРѕСЃР»РµРґРЅРµРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ"),
+0017:         ),
+0018:     ]
+
+================================================================================
+: D:\python\django\drf_home_works\lms\migrations\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\admin.py
+: D:\python\django\drf_home_works\lms\admin.py
 ================================================================================
 0001: from django.contrib import admin
 0002: 
@@ -583,7 +656,7 @@
 0017:     list_filter = ("course",)
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\apps.py
+: D:\python\django\drf_home_works\lms\apps.py
 ================================================================================
 0001: from django.apps import AppConfig
 0002: 
@@ -593,7 +666,7 @@
 0006:     name = "lms"
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\models.py
+: D:\python\django\drf_home_works\lms\models.py
 ================================================================================
 0001: from django.core.validators import FileExtensionValidator
 0002: from django.db import models
@@ -619,64 +692,75 @@
 0022:         help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° РєСѓСЂСЃР°",
 0023:     )
 0024: 
-0025:     def __str__(self):
-0026:         return self.name
-0027: 
-0028:     class Meta:
-0029:         verbose_name = "РљСѓСЂСЃ"
-0030:         verbose_name_plural = "РљСѓСЂСЃС‹"
-0031:         db_table = "Courses"
-0032: 
+0025:     updated_at = models.DateTimeField(
+0026:         auto_now=True,
+0027:         verbose_name="Р”Р°С‚Р° РїРѕСЃР»РµРґРЅРµРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ",
+0028:         help_text="РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ РїСЂРё РёР·РјРµРЅРµРЅРёРё РєСѓСЂСЃР°"
+0029:     )
+0030: 
+0031:     def __str__(self):
+0032:         return self.name
 0033: 
-0034: class Lesson(models.Model):
-0035:     name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
-0036:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
-0037:     preview = models.ImageField(
-0038:         upload_to="lessons/previews",
-0039:         blank=True,
-0040:         null=True,
-0041:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
-0042:         verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
-0043:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
-0044:     )
-0045:     video_link = models.URLField(max_length=500, blank=True, null=True)
-0046:     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
-0047:     owner = models.ForeignKey(
-0048:         "users.User",
-0049:         on_delete=models.SET_NULL,
-0050:         null=True,
-0051:         blank=True,
-0052:         verbose_name="Р’Р»Р°РґРµР»РµС†",
-0053:         help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° СѓСЂРѕРєР°",
-0054:     )
-0055: 
-0056:     def __str__(self):
-0057:         return self.name
-0058: 
-0059:     class Meta:
-0060:         verbose_name = "РЈСЂРѕРє"
-0061:         verbose_name_plural = "РЈСЂРѕРєРё"
-0062:         db_table = "lessons"
-0063: 
-0064: 
-0065: class Subscription(models.Model):
-0066:     user = models.ForeignKey(
-0067:         "users.User", on_delete=models.CASCADE, verbose_name="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ", related_name="subscriptions"
-0068:     )
-0069:     course = models.ForeignKey("Course", on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ", related_name="subscriptions")
-0070:     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Р”Р°С‚Р° РїРѕРґРїРёСЃРєРё")
-0071: 
-0072:     class Meta:
-0073:         verbose_name = "РџРѕРґРїРёСЃРєР°"
-0074:         verbose_name_plural = "РџРѕРґРїРёСЃРєРё"
-0075:         unique_together = ["user", "course"]  # РћРґРЅР° РїРѕРґРїРёСЃРєР° РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РєСѓСЂСЃ
-0076:         ordering = ["-created_at"]
-0077: 
-0078:     def __str__(self):
-0079:         return f"{self.user.username} - {self.course.name}"
+0034:     class Meta:
+0035:         verbose_name = "РљСѓСЂСЃ"
+0036:         verbose_name_plural = "РљСѓСЂСЃС‹"
+0037:         db_table = "Courses"
+0038: 
+0039: 
+0040: class Lesson(models.Model):
+0041:     name = models.CharField(max_length=300, verbose_name="РќР°Р·РІР°РЅРёРµ СѓСЂРѕРєР°")
+0042:     description = models.TextField(verbose_name="РћРїРёСЃР°РЅРёРµ СѓСЂРѕРєР°")
+0043:     preview = models.ImageField(
+0044:         upload_to="lessons/previews",
+0045:         blank=True,
+0046:         null=True,
+0047:         validators=[FileExtensionValidator(allowed_extensions=["jfif", "jpg", "jpeg", "png"])],
+0048:         verbose_name="РџСЂРµРІСЊСЋС€РєР° СѓСЂРѕРєР°",
+0049:         help_text="Р—Р°РіСЂСѓР·РёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РїСЂРµРІСЊСЋС€РєРё СѓСЂРѕРєР°",
+0050:     )
+0051:     video_link = models.URLField(max_length=500, blank=True, null=True)
+0052:     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ")
+0053:     owner = models.ForeignKey(
+0054:         "users.User",
+0055:         on_delete=models.SET_NULL,
+0056:         null=True,
+0057:         blank=True,
+0058:         verbose_name="Р’Р»Р°РґРµР»РµС†",
+0059:         help_text="РЈРєР°Р¶РёС‚Рµ РІР»Р°РґРµР»СЊС†Р° СѓСЂРѕРєР°",
+0060:     )
+0061: 
+0062:     updated_at = models.DateTimeField(
+0063:         auto_now=True,
+0064:         verbose_name="Р”Р°С‚Р° РїРѕСЃР»РµРґРЅРµРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ"
+0065:     )
+0066: 
+0067:     def __str__(self):
+0068:         return self.name
+0069: 
+0070:     class Meta:
+0071:         verbose_name = "РЈСЂРѕРє"
+0072:         verbose_name_plural = "РЈСЂРѕРєРё"
+0073:         db_table = "lessons"
+0074: 
+0075: 
+0076: class Subscription(models.Model):
+0077:     user = models.ForeignKey(
+0078:         "users.User", on_delete=models.CASCADE, verbose_name="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ", related_name="subscriptions"
+0079:     )
+0080:     course = models.ForeignKey("Course", on_delete=models.CASCADE, verbose_name="РљСѓСЂСЃ", related_name="subscriptions")
+0081:     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Р”Р°С‚Р° РїРѕРґРїРёСЃРєРё")
+0082: 
+0083:     class Meta:
+0084:         verbose_name = "РџРѕРґРїРёСЃРєР°"
+0085:         verbose_name_plural = "РџРѕРґРїРёСЃРєРё"
+0086:         unique_together = ["user", "course"]  # РћРґРЅР° РїРѕРґРїРёСЃРєР° РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РєСѓСЂСЃ
+0087:         ordering = ["-created_at"]
+0088: 
+0089:     def __str__(self):
+0090:         return f"{self.user.username} - {self.course.name}"
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\paginators.py
+: D:\python\django\drf_home_works\lms\paginators.py
 ================================================================================
 0001: from rest_framework.pagination import PageNumberPagination
 0002: 
@@ -701,7 +785,7 @@
 0021:     max_page_size = 20  # РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РЅР° СЃС‚СЂР°РЅРёС†Рµ
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\permissions.py
+: D:\python\django\drf_home_works\lms\permissions.py
 ================================================================================
 0001: from rest_framework import permissions
 0002: 
@@ -764,7 +848,7 @@
 0059:         return is_owner and not is_moderator  # РўРѕР»СЊРєРѕ РІР»Р°РґРµР»СЊС†С‹
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\serializer.py
+: D:\python\django\drf_home_works\lms\serializer.py
 ================================================================================
 0001: from rest_framework import serializers
 0002: 
@@ -797,69 +881,148 @@
 0029:         return False
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\tasks.py
+: D:\python\django\drf_home_works\lms\tasks.py
 ================================================================================
 0001: from celery import shared_task
 0002: from django.core.mail import send_mail
 0003: from django.conf import settings
-0004: from .models import Course, Subscription
+0004: from .models import Course, Subscription, Lesson
 0005: from datetime import datetime, timedelta
 0006: from django.utils import timezone
 0007: 
 0008: 
 0009: @shared_task
 0010: def send_course_update_notification(course_id):
-0011:     """РћС‚РїСЂР°РІРєР° СѓРІРµРґРѕРјР»РµРЅРёСЏ РѕР± РѕР±РЅРѕРІР»РµРЅРёРё РєСѓСЂСЃР°"""
-0012:     try:
-0013:         course = Course.objects.get(id=course_id)
-0014:         subscribers = Subscription.objects.filter(course=course)
+0011:     """РћС‚РїСЂР°РІРєР° СѓРІРµРґРѕРјР»РµРЅРёСЏ РѕР± РѕР±РЅРѕРІР»РµРЅРёРё РєСѓСЂСЃР° СЃ РїСЂРѕРІРµСЂРєРѕР№ РІСЂРµРјРµРЅРё"""
+0012:     print(f"Р—РђР”РђР§Рђ Р—РђРџРЈР©Р•РќРђ РґР»СЏ РєСѓСЂСЃР° {course_id}")
+0013:     try:
+0014:         course = Course.objects.get(id=course_id)
 0015: 
-0016:         for subscription in subscribers:
-0017:             send_mail(
-0018:                 subject=f'РћР±РЅРѕРІР»РµРЅРёРµ РєСѓСЂСЃР°: {course.name}',
-0019:                 message=f'РљСѓСЂСЃ "{course.name}" Р±С‹Р» РѕР±РЅРѕРІР»РµРЅ. РџСЂРѕРІРµСЂСЊС‚Рµ РЅРѕРІС‹Рµ РјР°С‚РµСЂРёР°Р»С‹!',
-0020:                 from_email=settings.EMAIL_HOST_USER,
-0021:                 recipient_list=[subscription.user.email],
-0022:                 fail_silently=False,
-0023:             )
-0024: 
-0025:         return f"РЈРІРµРґРѕРјР»РµРЅРёСЏ РѕС‚РїСЂР°РІР»РµРЅС‹ РґР»СЏ {subscribers.count()} РїРѕРґРїРёСЃС‡РёРєРѕРІ"
-0026:     except Course.DoesNotExist:
-0027:         return "РљСѓСЂСЃ РЅРµ РЅР°Р№РґРµРЅ"
-0028: 
+0016:         # РџСЂРѕРІРµСЂСЏРµРј, РєРѕРіРґР° РєСѓСЂСЃ РїРѕСЃР»РµРґРЅРёР№ СЂР°Р· РѕР±РЅРѕРІР»СЏР»СЃСЏ
+0017:         time_since_update = timezone.now() - course.updated_at
+0018: 
+0019:         # Р•СЃР»Рё РєСѓСЂСЃ РѕР±РЅРѕРІР»СЏР»СЃСЏ РјРµРЅРµРµ 4 С‡Р°СЃРѕРІ РЅР°Р·Р°Рґ - РЅРµ РѕС‚РїСЂР°РІР»СЏРµРј СѓРІРµРґРѕРјР»РµРЅРёРµ
+0020:         if time_since_update < timedelta(hours=4):
+0021:             return f"РљСѓСЂСЃ РѕР±РЅРѕРІР»СЏР»СЃСЏ РЅРµРґР°РІРЅРѕ ({time_since_update}), СѓРІРµРґРѕРјР»РµРЅРёРµ РЅРµ РѕС‚РїСЂР°РІР»РµРЅРѕ"
+0022: 
+0023:         subscribers = Subscription.objects.filter(course=course)
+0024:         print(f"РќР°Р№РґРµРЅРѕ РїРѕРґРїРёСЃС‡РёРєРѕРІ: {subscribers.count()}")
+0025: 
+0026:         if subscribers.count() == 0:
+0027:             print("РќРµС‚ РїРѕРґРїРёСЃС‡РёРєРѕРІ РґР»СЏ СѓРІРµРґРѕРјР»РµРЅРёСЏ")
+0028:             return "РќРµС‚ РїРѕРґРїРёСЃС‡РёРєРѕРІ"
 0029: 
-0030: @shared_task
-0031: def check_inactive_users():
-0032:     """РџСЂРѕРІРµСЂРєР° РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"""
-0033:     from users.models import User
-0034:     month_ago = timezone.now() - timedelta(days=30)
-0035:     inactive_users = User.objects.filter(last_login__lt=month_ago, is_active=True)
-0036: 
-0037:     for user in inactive_users:
-0038:         send_mail(
-0039:             subject='РњС‹ СЃРєСѓС‡Р°РµРј РїРѕ РІР°Рј!',
-0040:             message='Р’С‹ РґР°РІРЅРѕ РЅРµ Р·Р°С…РѕРґРёР»Рё РЅР° РЅР°С€Сѓ РїР»Р°С‚С„РѕСЂРјСѓ. РЈ РЅР°СЃ РµСЃС‚СЊ РЅРѕРІС‹Рµ РёРЅС‚РµСЂРµСЃРЅС‹Рµ РєСѓСЂСЃС‹!',
-0041:             from_email=settings.EMAIL_HOST_USER,
-0042:             recipient_list=[user.email],
-0043:             fail_silently=False,
-0044:         )
-0045: 
-0046:     return f"РџСЂРѕРІРµСЂРµРЅРѕ {inactive_users.count()} РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№"
+0030:         for subscription in subscribers:
+0031:             print(f"РћРўРџР РђР’РљРђ: {subscription.user.email}")
+0032: 
+0033:             # РћС‚РїСЂР°РІРєР° РїРёСЃСЊРјР°
+0034:             send_mail(
+0035:                 subject=f'РћР±РЅРѕРІР»РµРЅРёРµ РєСѓСЂСЃР°: {course.name}',
+0036:                 message=f'РљСѓСЂСЃ "{course.name}" Р±С‹Р» РѕР±РЅРѕРІР»РµРЅ. РџСЂРѕРІРµСЂСЊС‚Рµ РЅРѕРІС‹Рµ РјР°С‚РµСЂРёР°Р»С‹!\n\n'
+0037:                         f'РџРµСЂРµР№С‚Рё Рє РєСѓСЂСЃСѓ: http://127.0.0.1:8000/courses/courses/{course.id}/',
+0038:                 from_email=settings.EMAIL_HOST_USER,
+0039:                 recipient_list=[subscription.user.email],
+0040:                 fail_silently=False,
+0041:             )
+0042: 
+0043:             print(f"РџРёСЃСЊРјРѕ РѕС‚РїСЂР°РІР»РµРЅРѕ РЅР°: {subscription.user.email}")
+0044: 
+0045:         print(f"РЈРІРµРґРѕРјР»РµРЅРёСЏ РѕС‚РїСЂР°РІР»РµРЅС‹ РґР»СЏ {subscribers.count()} РїРѕРґРїРёСЃС‡РёРєРѕРІ")
+0046:         return f"РЈРІРµРґРѕРјР»РµРЅРёСЏ РѕС‚РїСЂР°РІР»РµРЅС‹ РґР»СЏ {subscribers.count()} РїРѕРґРїРёСЃС‡РёРєРѕРІ"
 0047: 
-0048: 
-0049: @shared_task
-0050: def update_course_statistics():
-0051:     """РћР±РЅРѕРІР»РµРЅРёРµ СЃС‚Р°С‚РёСЃС‚РёРєРё РєСѓСЂСЃРѕРІ"""
-0052:     courses = Course.objects.all()
-0053:     for course in courses:
-0054:         course.lessons_count = course.lesson_set.count()
-0055:         course.subscribers_count = course.subscriptions.count()
-0056:         course.save()
-0057: 
-0058:     return "РЎС‚Р°С‚РёСЃС‚РёРєР° РєСѓСЂСЃРѕРІ РѕР±РЅРѕРІР»РµРЅР°"
+0048:     except Exception as e:
+0049:         print(f"РћРЁРР‘РљРђ: {e}")
+0050:         return f"РћС€РёР±РєР°: {e}"
+0051: 
+0052: 
+0053: @shared_task
+0054: def check_inactive_users():
+0055:     """РџСЂРѕРІРµСЂРєР° Рё Р±Р»РѕРєРёСЂРѕРІРєР° РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ (РЅРµ Р·Р°С…РѕРґРёРІС€РёС… Р±РѕР»РµРµ РјРµСЃСЏС†Р°)"""
+0056:     from users.models import User
+0057:     from django.utils import timezone
+0058:     from datetime import timedelta
+0059: 
+0060:     # Р’С‹С‡РёСЃР»СЏРµРј РґР°С‚Сѓ (30 РґРЅРµР№ РЅР°Р·Р°Рґ)
+0061:     month_ago = timezone.now() - timedelta(days=30)
+0062: 
+0063:     # РќР°С…РѕРґРёРј РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ (РёСЃРєР»СЋС‡Р°РµРј СЃСѓРїРµСЂРїРѕР»СЊР·РѕРІР°С‚РµР»РµР№)
+0064:     inactive_users = User.objects.filter(
+0065:         last_login__lt=month_ago,  # РќРµ Р·Р°С…РѕРґРёР»Рё Р±РѕР»РµРµ РјРµСЃСЏС†Р°
+0066:         is_active=True  # РўРѕР»СЊРєРѕ Р°РєС‚РёРІРЅС‹Рµ
+0067:     ).exclude(
+0068:         is_superuser=True  # РСЃРєР»СЋС‡Р°РµРј СЃСѓРїРµСЂРїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+0069:     )
+0070: 
+0071:     blocked_count = 0
+0072:     notified_count = 0
+0073: 
+0074:     print(f"рџ”Ќ РќР°Р№РґРµРЅРѕ РЅРµР°РєС‚РёРІРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№: {inactive_users.count()}")
+0075: 
+0076:     for user in inactive_users:
+0077:         try:
+0078:             # Р‘Р»РѕРєРёСЂСѓРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+0079:             user.is_active = False
+0080:             user.save()
+0081:             blocked_count += 1
+0082: 
+0083:             print(f"рџ”’ Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ: {user.email} (РїРѕСЃР»РµРґРЅРёР№ РІС…РѕРґ: {user.last_login})")
+0084: 
+0085:             # РћС‚РїСЂР°РІР»СЏРµРј СѓРІРµРґРѕРјР»РµРЅРёРµ
+0086:             send_mail(
+0087:                 subject='Р’Р°С€ Р°РєРєР°СѓРЅС‚ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ Р·Р° РЅРµР°РєС‚РёРІРЅРѕСЃС‚СЊ',
+0088:                 message=f'РЈРІР°Р¶Р°РµРјС‹Р№ {user.username},\n\n'
+0089:                         f'Р’Р°С€ Р°РєРєР°СѓРЅС‚ {user.email} Р±С‹Р» Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ '
+0090:                         f'РёР·-Р·Р° РґР»РёС‚РµР»СЊРЅРѕРіРѕ РѕС‚СЃСѓС‚СЃС‚РІРёСЏ Р°РєС‚РёРІРЅРѕСЃС‚Рё РЅР° РїР»Р°С‚С„РѕСЂРјРµ.\n'
+0091:                         f'РџРѕСЃР»РµРґРЅРёР№ РІС…РѕРґ: {user.last_login.strftime("%d.%m.%Y %H:%M")}\n\n'
+0092:                         f'Р”Р»СЏ СЂР°Р·Р±Р»РѕРєРёСЂРѕРІРєРё Р°РєРєР°СѓРЅС‚Р° РѕР±СЂР°С‚РёС‚РµСЃСЊ Рє Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂСѓ.\n\n'
+0093:                         f'РЎ СѓРІР°Р¶РµРЅРёРµРј,\nРљРѕРјР°РЅРґР° РѕР±СЂР°Р·РѕРІР°С‚РµР»СЊРЅРѕР№ РїР»Р°С‚С„РѕСЂРјС‹',
+0094:                 from_email=settings.EMAIL_HOST_USER,
+0095:                 recipient_list=[user.email],
+0096:                 fail_silently=False,
+0097:             )
+0098:             notified_count += 1
+0099: 
+0100:             print(f"рџ“§ РЈРІРµРґРѕРјР»РµРЅРёРµ РѕС‚РїСЂР°РІР»РµРЅРѕ: {user.email}")
+0101: 
+0102:         except Exception as e:
+0103:             print(f"вќЊ РћС€РёР±РєР° РїСЂРё Р±Р»РѕРєРёСЂРѕРІРєРµ {user.email}: {e}")
+0104: 
+0105:     return f"Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ {blocked_count} РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№, РѕС‚РїСЂР°РІР»РµРЅРѕ {notified_count} СѓРІРµРґРѕРјР»РµРЅРёР№"
+0106: 
+0107: 
+0108: @shared_task
+0109: def update_course_statistics():
+0110:     """РћР±РЅРѕРІР»РµРЅРёРµ СЃС‚Р°С‚РёСЃС‚РёРєРё РєСѓСЂСЃРѕРІ"""
+0111:     courses = Course.objects.all()
+0112:     for course in courses:
+0113:         course.lessons_count = course.lesson_set.count()
+0114:         course.subscribers_count = course.subscriptions.count()
+0115:         course.save()
+0116: 
+0117:     return "РЎС‚Р°С‚РёСЃС‚РёРєР° РєСѓСЂСЃРѕРІ РѕР±РЅРѕРІР»РµРЅР°"
+0118: 
+0119: 
+0120: @shared_task
+0121: def check_lesson_updates():
+0122:     """РџСЂРѕРІРµСЂСЏРµС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ СѓСЂРѕРєРѕРІ Рё РѕС‚РїСЂР°РІР»СЏРµС‚ СѓРІРµРґРѕРјР»РµРЅРёСЏ РїРѕ РєСѓСЂСЃР°Рј"""
+0123:     four_hours_ago = timezone.now() - timedelta(hours=4)
+0124: 
+0125:     # РќР°С…РѕРґРёРј СѓСЂРѕРєРё, РѕР±РЅРѕРІР»РµРЅРЅС‹Рµ Р±РѕР»РµРµ 4 С‡Р°СЃРѕРІ РЅР°Р·Р°Рґ
+0126:     recent_lessons = Lesson.objects.filter(updated_at__gte=four_hours_ago)
+0127: 
+0128:     courses_to_notify = set()
+0129: 
+0130:     for lesson in recent_lessons:
+0131:         courses_to_notify.add(lesson.course.id)
+0132: 
+0133:     # РћС‚РїСЂР°РІР»СЏРµРј СѓРІРµРґРѕРјР»РµРЅРёСЏ РґР»СЏ РєР°Р¶РґРѕРіРѕ РєСѓСЂСЃР°
+0134:     for course_id in courses_to_notify:
+0135:         send_course_update_notification.delay(course_id)
+0136: 
+0137:     return f"РџСЂРѕРІРµСЂРµРЅРѕ РѕР±РЅРѕРІР»РµРЅРёР№ РґР»СЏ {len(courses_to_notify)} РєСѓСЂСЃРѕРІ"
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\tests.py
+: D:\python\django\drf_home_works\lms\tests.py
 ================================================================================
 0001: from django.test import TestCase
 0002: from django.urls import reverse
@@ -1226,7 +1389,7 @@
 0363: #             print(f"{url} -> {response.status_code}")
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\tests_comprehensive.py
+: D:\python\django\drf_home_works\lms\tests_comprehensive.py
 ================================================================================
 0001: from django.contrib.auth import get_user_model
 0002: from django.urls import reverse
@@ -1491,7 +1654,7 @@
 0261:             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\urls.py
+: D:\python\django\drf_home_works\lms\urls.py
 ================================================================================
 0001: from django.urls import path
 0002: from rest_framework.routers import SimpleRouter
@@ -1521,7 +1684,7 @@
 0026: ] + router.urls
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\validators.py
+: D:\python\django\drf_home_works\lms\validators.py
 ================================================================================
 0001: import re
 0002: from urllib.parse import urlparse
@@ -1589,130 +1752,165 @@
 0064:             raise serializers.ValidationError({field_name: f"РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё СЃСЃС‹Р»РєРё: {str(e)}"})
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\views.py
+: D:\python\django\drf_home_works\lms\views.py
 ================================================================================
 0001: from django.shortcuts import get_object_or_404
-0002: from django.utils.decorators import method_decorator
-0003: from drf_yasg.utils import swagger_auto_schema
-0004: from rest_framework import permissions, status
-0005: from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
-0006: from rest_framework.permissions import IsAuthenticated
-0007: from rest_framework.response import Response
-0008: from rest_framework.views import APIView
-0009: from rest_framework.viewsets import ModelViewSet
-0010: 
-0011: from .models import Course, Lesson, Subscription
-0012: from .paginators import CoursePaginator, LessonPaginator
-0013: from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
-0014: from .serializer import CourseSerializer, LessonSerializer
-0015: 
-0016: from .tasks import send_course_update_notification
-0017: 
-0018: @method_decorator(
-0019:     name="list",
-0020:     decorator=swagger_auto_schema(operation_description="description from swagger_auto_schema via method_decorator"),
-0021: )
-0022: class CourseViewSet(ModelViewSet):
-0023:     queryset = Course.objects.all().order_by("id")
-0024:     serializer_class = CourseSerializer
-0025: 
-0026:     permission_classes = [permissions.IsAuthenticated, CoursePermission]
-0027:     pagination_class = CoursePaginator
-0028: 
-0029:     def get_serializer_context(self):
-0030:         """РџРµСЂРµРґР°РµРј request РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРѕРІРµСЂРєРё РїРѕРґРїРёСЃРєРё"""
-0031:         context = super().get_serializer_context()
-0032:         context["request"] = self.request
-0033:         return context
-0034: 
-0035:     def get_queryset(self):
-0036:         """Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РІРёРґСЏС‚ РІСЃРµ РєСѓСЂСЃС‹"""
-0037:         return Course.objects.all().order_by("id")
-0038: 
-0039:     def perform_create(self, serializer):
-0040:         """РџСЂРё СЃРѕР·РґР°РЅРёРё РєСѓСЂСЃР° РЅР°Р·РЅР°С‡Р°РµРј РІР»Р°РґРµР»СЊС†Р°"""
-0041:         course = serializer.save()
-0042:         course.owner = self.request.user
-0043:         course.save()
-0044: 
-0045:     def perform_update(self, serializer):
-0046:         course = serializer.save()
-0047:         # РћС‚РїСЂР°РІРєР° СѓРІРµРґРѕРјР»РµРЅРёСЏ Р°СЃРёРЅС…СЂРѕРЅРЅРѕ
-0048:         send_course_update_notification.delay(course.id)
-0049:         return course
-0050: 
-0051: 
-0052: class LessonCreateAPIView(CreateAPIView):
-0053:     queryset = Lesson.objects.all()
-0054:     serializer_class = LessonSerializer
-0055:     permission_classes = [permissions.IsAuthenticated, LessonCreatePermission]
-0056: 
-0057:     def perform_create(self, serializer):
-0058:         lesson = serializer.save()
-0059:         lesson.owner = self.request.user
-0060:         lesson.save()
-0061: 
-0062: 
-0063: class LessonDestroyAPIView(DestroyAPIView):
-0064:     queryset = Lesson.objects.all()
-0065:     serializer_class = LessonSerializer
-0066:     permission_classes = [permissions.IsAuthenticated, LessonDeletePermission]
-0067: 
+0002: from django.utils import timezone
+0003: from django.utils.decorators import method_decorator
+0004: from drf_yasg.utils import swagger_auto_schema
+0005: from rest_framework import permissions, status
+0006: from rest_framework.generics import CreateAPIView, DestroyAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+0007: from rest_framework.permissions import IsAuthenticated
+0008: from rest_framework.response import Response
+0009: from rest_framework.views import APIView
+0010: from rest_framework.viewsets import ModelViewSet
+0011: 
+0012: from .models import Course, Lesson, Subscription
+0013: from .paginators import CoursePaginator, LessonPaginator
+0014: from .permissions import CoursePermission, LessonCreatePermission, LessonDeletePermission, LessonUpdatePermission
+0015: from .serializer import CourseSerializer, LessonSerializer
+0016: 
+0017: from .tasks import send_course_update_notification
+0018: 
+0019: @method_decorator(
+0020:     name="list",
+0021:     decorator=swagger_auto_schema(operation_description="description from swagger_auto_schema via method_decorator"),
+0022: )
+0023: class CourseViewSet(ModelViewSet):
+0024:     queryset = Course.objects.all().order_by("id")
+0025:     serializer_class = CourseSerializer
+0026: 
+0027:     permission_classes = [permissions.IsAuthenticated, CoursePermission]
+0028:     pagination_class = CoursePaginator
+0029: 
+0030:     def get_serializer_context(self):
+0031:         """РџРµСЂРµРґР°РµРј request РІ СЃРµСЂРёР°Р»РёР·Р°С‚РѕСЂ РґР»СЏ РїСЂРѕРІРµСЂРєРё РїРѕРґРїРёСЃРєРё"""
+0032:         context = super().get_serializer_context()
+0033:         context["request"] = self.request
+0034:         return context
+0035: 
+0036:     def get_queryset(self):
+0037:         """Р’СЃРµ Р°СѓС‚РµРЅС‚РёС„РёС†РёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РІРёРґСЏС‚ РІСЃРµ РєСѓСЂСЃС‹"""
+0038:         return Course.objects.all().order_by("id")
+0039: 
+0040:     def perform_create(self, serializer):
+0041:         """РџСЂРё СЃРѕР·РґР°РЅРёРё РєСѓСЂСЃР° РЅР°Р·РЅР°С‡Р°РµРј РІР»Р°РґРµР»СЊС†Р°"""
+0042:         course = serializer.save()
+0043:         course.owner = self.request.user
+0044:         course.save()
+0045: 
+0046:     def perform_update(self, serializer):
+0047:         course = serializer.save()
+0048: 
+0049:         # РћР±РЅРѕРІР»СЏРµРј РІСЂРµРјСЏ РїРѕСЃР»РµРґРЅРµРіРѕ РёР·РјРµРЅРµРЅРёСЏ
+0050:         course.updated_at = timezone.now()
+0051:         course.save()
+0052: 
+0053:         # РђСЃРёРЅС…СЂРѕРЅРЅРѕ РѕС‚РїСЂР°РІР»СЏРµРј СѓРІРµРґРѕРјР»РµРЅРёСЏ
+0054:         send_course_update_notification.delay(course.id)
+0055: 
+0056:         return course
+0057: 
+0058: 
+0059: class LessonCreateAPIView(CreateAPIView):
+0060:     queryset = Lesson.objects.all()
+0061:     serializer_class = LessonSerializer
+0062:     permission_classes = [permissions.IsAuthenticated, LessonCreatePermission]
+0063: 
+0064:     def perform_create(self, serializer):
+0065:         lesson = serializer.save()
+0066:         lesson.owner = self.request.user
+0067:         lesson.save()
 0068: 
-0069: class LessonUpdateAPIView(UpdateAPIView):
-0070:     queryset = Lesson.objects.all()
-0071:     serializer_class = LessonSerializer
-0072:     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
-0073: 
+0069: 
+0070: class LessonDestroyAPIView(DestroyAPIView):
+0071:     queryset = Lesson.objects.all()
+0072:     serializer_class = LessonSerializer
+0073:     permission_classes = [permissions.IsAuthenticated, LessonDeletePermission]
 0074: 
-0075: class LessonRetrieveAPIView(RetrieveAPIView):
-0076:     queryset = Lesson.objects.all()
-0077:     serializer_class = LessonSerializer
-0078:     permission_classes = [permissions.IsAuthenticated]
-0079: 
+0075: 
+0076: class LessonUpdateAPIView(UpdateAPIView):
+0077:     queryset = Lesson.objects.all()
+0078:     serializer_class = LessonSerializer
+0079:     permission_classes = [permissions.IsAuthenticated, LessonUpdatePermission]
 0080: 
-0081: class LessonListAPIView(ListAPIView):
-0082:     queryset = Lesson.objects.all().order_by("id")
-0083:     serializer_class = LessonSerializer
-0084:     permission_classes = [permissions.IsAuthenticated]
-0085:     pagination_class = LessonPaginator
-0086: 
-0087:     def get_queryset(self):
-0088:         return Lesson.objects.all().order_by("id")
+0081:     def perform_update(self, serializer):
+0082:         lesson = serializer.save()
+0083:         lesson.updated_at = timezone.now()  # Р”РѕР±Р°РІР»СЏРµРј РїРѕР»Рµ updated_at РІ РјРѕРґРµР»СЊ Lesson
+0084:         lesson.save()
+0085: 
+0086:         # Р—Р°РїСѓСЃРєР°РµРј РїСЂРѕРІРµСЂРєСѓ РѕР±РЅРѕРІР»РµРЅРёР№ РєСѓСЂСЃР°
+0087:         from .tasks import check_lesson_updates
+0088:         check_lesson_updates.delay()
 0089: 
 0090: 
-0091: class SubscriptionAPIView(APIView):
-0092:     """API РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєР°РјРё РЅР° РєСѓСЂСЃС‹"""
-0093: 
-0094:     permission_classes = [IsAuthenticated]
+0091: class LessonRetrieveAPIView(RetrieveAPIView):
+0092:     queryset = Lesson.objects.all()
+0093:     serializer_class = LessonSerializer
+0094:     permission_classes = [permissions.IsAuthenticated]
 0095: 
-0096:     def post(self, request, *args, **kwargs):
-0097:         user = request.user
-0098:         course_id = request.data.get("course_id")
-0099: 
-0100:         if not course_id:
-0101:             return Response({"error": "course_id РѕР±СЏР·Р°С‚РµР»РµРЅ"}, status=status.HTTP_400_BAD_REQUEST)
+0096: 
+0097: class LessonListAPIView(ListAPIView):
+0098:     queryset = Lesson.objects.all().order_by("id")
+0099:     serializer_class = LessonSerializer
+0100:     permission_classes = [permissions.IsAuthenticated]
+0101:     pagination_class = LessonPaginator
 0102: 
-0103:         course = get_object_or_404(Course, id=course_id)
-0104:         subscription = Subscription.objects.filter(user=user, course=course)
+0103:     def get_queryset(self):
+0104:         return Lesson.objects.all().order_by("id")
 0105: 
-0106:         if subscription.exists():
-0107:             # РЈРґР°Р»СЏРµРј РїРѕРґРїРёСЃРєСѓ
-0108:             subscription.delete()
-0109:             message = "РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°"
-0110:         else:
-0111:             # РЎРѕР·РґР°РµРј РїРѕРґРїРёСЃРєСѓ
-0112:             Subscription.objects.create(user=user, course=course)
-0113:             message = "РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°"
-0114: 
-0115:         return Response({"message": message}, status=status.HTTP_200_OK)
+0106: 
+0107: class SubscriptionAPIView(APIView):
+0108:     """API РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РїРѕРґРїРёСЃРєР°РјРё РЅР° РєСѓСЂСЃС‹"""
+0109: 
+0110:     permission_classes = [IsAuthenticated]
+0111: 
+0112:     def get(self, request, *args, **kwargs):
+0113:         """РџРѕР»СѓС‡РёС‚СЊ РІСЃРµ РїРѕРґРїРёСЃРєРё С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ"""
+0114:         user = request.user
+0115:         subscriptions = Subscription.objects.filter(user=user)
+0116: 
+0117:         # РЎРµСЂРёР°Р»РёР·СѓРµРј РґР°РЅРЅС‹Рµ
+0118:         data = []
+0119:         for subscription in subscriptions:
+0120:             data.append({
+0121:                 "id": subscription.id,
+0122:                 "course_id": subscription.course.id,
+0123:                 "course_name": subscription.course.name,
+0124:                 "subscribed_at": subscription.created_at,
+0125:                 "is_active": True
+0126:             })
+0127: 
+0128:         return Response(data, status=status.HTTP_200_OK)
+0129: 
+0130:     def post(self, request, *args, **kwargs):
+0131:         """Р”РѕР±Р°РІРёС‚СЊ/СѓРґР°Р»РёС‚СЊ РїРѕРґРїРёСЃРєСѓ"""
+0132:         user = request.user
+0133:         course_id = request.data.get("course_id")
+0134: 
+0135:         if not course_id:
+0136:             return Response({"error": "course_id РѕР±СЏР·Р°С‚РµР»РµРЅ"}, status=status.HTTP_400_BAD_REQUEST)
+0137: 
+0138:         course = get_object_or_404(Course, id=course_id)
+0139:         subscription = Subscription.objects.filter(user=user, course=course)
+0140: 
+0141:         if subscription.exists():
+0142:             # РЈРґР°Р»СЏРµРј РїРѕРґРїРёСЃРєСѓ
+0143:             subscription.delete()
+0144:             message = "РџРѕРґРїРёСЃРєР° СѓРґР°Р»РµРЅР°"
+0145:         else:
+0146:             # РЎРѕР·РґР°РµРј РїРѕРґРїРёСЃРєСѓ
+0147:             Subscription.objects.create(user=user, course=course)
+0148:             message = "РџРѕРґРїРёСЃРєР° РґРѕР±Р°РІР»РµРЅР°"
+0149: 
+0150:         return Response({"message": message}, status=status.HTTP_200_OK)
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\lms\__init__.py
+: D:\python\django\drf_home_works\lms\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\management\commands\create_moderator.py
+: D:\python\django\drf_home_works\users\management\commands\create_moderator.py
 ================================================================================
 0001: from django.contrib.auth import get_user_model
 0002: from django.contrib.auth.models import Group, Permission
@@ -1772,7 +1970,7 @@
 0056:         )
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\management\commands\create_superuser.py
+: D:\python\django\drf_home_works\users\management\commands\create_superuser.py
 ================================================================================
 0001: import os
 0002: 
@@ -1795,7 +1993,7 @@
 0019:         user.save()
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\management\commands\load_payments.py
+: D:\python\django\drf_home_works\users\management\commands\load_payments.py
 ================================================================================
 0001: from django.core.management.base import BaseCommand
 0002: 
@@ -1841,15 +2039,15 @@
 0042:         self.stdout.write(self.style.SUCCESS(f"РЈСЃРїРµС€РЅРѕ СЃРѕР·РґР°РЅРѕ {Payment.objects.count()} РїР»Р°С‚РµР¶РµР№"))
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\management\commands\__init__.py
+: D:\python\django\drf_home_works\users\management\commands\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\management\__init__.py
+: D:\python\django\drf_home_works\users\management\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\migrations\0001_initial.py
+: D:\python\django\drf_home_works\users\migrations\0001_initial.py
 ================================================================================
 0001: # Generated by Django 5.2.5 on 2025-08-28 09:52
 0002: 
@@ -2000,7 +2198,7 @@
 0147:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\migrations\0002_user_city.py
+: D:\python\django\drf_home_works\users\migrations\0002_user_city.py
 ================================================================================
 0001: # Generated by Django 5.2.5 on 2025-08-29 06:49
 0002: 
@@ -2024,7 +2222,7 @@
 0020:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\migrations\0003_payment.py
+: D:\python\django\drf_home_works\users\migrations\0003_payment.py
 ================================================================================
 0001: # Generated by Django 5.2.5 on 2025-09-02 10:41
 0002: 
@@ -2096,7 +2294,7 @@
 0068:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\migrations\0004_alter_user_role.py
+: D:\python\django\drf_home_works\users\migrations\0004_alter_user_role.py
 ================================================================================
 0001: # Generated by Django 5.2.6 on 2025-09-06 11:42
 0002: 
@@ -2123,7 +2321,7 @@
 0023:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\migrations\0005_payment_link_for_pay_payment_session_id.py
+: D:\python\django\drf_home_works\users\migrations\0005_payment_link_for_pay_payment_session_id.py
 ================================================================================
 0001: # Generated by Django 5.2.6 on 2025-09-10 09:00
 0002: 
@@ -2158,11 +2356,11 @@
 0031:     ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\migrations\__init__.py
+: D:\python\django\drf_home_works\users\migrations\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\admin.py
+: D:\python\django\drf_home_works\users\admin.py
 ================================================================================
 0001: from django.contrib import admin
 0002: from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -2263,7 +2461,7 @@
 0097:     lesson_name.short_description = "РЈСЂРѕРє"
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\apps.py
+: D:\python\django\drf_home_works\users\apps.py
 ================================================================================
 0001: from django.apps import AppConfig
 0002: 
@@ -2273,7 +2471,7 @@
 0006:     name = "users"
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\filters.py
+: D:\python\django\drf_home_works\users\filters.py
 ================================================================================
 0001: import django_filters
 0002: 
@@ -2302,7 +2500,7 @@
 0025:         fields = ["course", "lesson", "payment_method"]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\forms.py
+: D:\python\django\drf_home_works\users\forms.py
 ================================================================================
 0001: from django import forms
 0002: from django.conf import settings
@@ -2374,7 +2572,7 @@
 0068:         )
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\mixins.py
+: D:\python\django\drf_home_works\users\mixins.py
 ================================================================================
 0001: from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 0002: from django.core.exceptions import PermissionDenied
@@ -2410,7 +2608,7 @@
 0032:         return self.request.user.role == "manager" or self.request.user.is_staff
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\models.py
+: D:\python\django\drf_home_works\users\models.py
 ================================================================================
 0001: from django.contrib.auth.models import AbstractUser
 0002: from django.core.validators import FileExtensionValidator
@@ -2539,7 +2737,7 @@
 0125:             raise ValidationError("Р”РѕР»Р¶РµРЅ Р±С‹С‚СЊ СѓРєР°Р·Р°РЅ Р»РёР±Рѕ РєСѓСЂСЃ, Р»РёР±Рѕ СѓСЂРѕРє.")
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\permissions.py
+: D:\python\django\drf_home_works\users\permissions.py
 ================================================================================
 0001: from rest_framework import permissions
 0002: 
@@ -2580,7 +2778,7 @@
 0037:         return is_manager or is_admin
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\serializers.py
+: D:\python\django\drf_home_works\users\serializers.py
 ================================================================================
 0001: from rest_framework import serializers
 0002: 
@@ -2803,7 +3001,7 @@
 0219:         return value
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\services.py
+: D:\python\django\drf_home_works\users\services.py
 ================================================================================
 0001: import requests
 0002: import stripe
@@ -2939,14 +3137,14 @@
 0132:         return "unknown"
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\tests.py
+: D:\python\django\drf_home_works\users\tests.py
 ================================================================================
 0001: # from django.test import TestCase
 0002: 
 0003: # Create your tests here.
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\urls.py
+: D:\python\django\drf_home_works\users\urls.py
 ================================================================================
 0001: from django.contrib.auth import views as auth_views
 0002: from django.contrib.auth.views import LoginView
@@ -3034,7 +3232,7 @@
 0084: ]
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\views.py
+: D:\python\django\drf_home_works\users\views.py
 ================================================================================
 0001: import secrets
 0002: 
@@ -3359,11 +3557,11 @@
 0321:     serializer_class = PaymentSerializer
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\users\__init__.py
+: D:\python\django\drf_home_works\users\__init__.py
 ================================================================================
 
 ================================================================================
-ФАЙЛ: D:\python\django\drf_home_works\manage.py
+: D:\python\django\drf_home_works\manage.py
 ================================================================================
 0001: #!/usr/bin/env python
 0002: """Django's command-line utility for administrative tasks."""
