@@ -16,6 +16,25 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if os.getenv("DEBUG") == "True" else False
 
+
+def get_database_host():
+    """Если мы в Docker контейнере, используем 'db'
+       Проверяем по наличию Docker-специфичных переменных окружения"""
+    if os.getenv('DOCKER_CONTAINER') or os.path.exists('/.dockerenv'):
+        return os.getenv('DOCKER_HOST')
+    else:
+        return os.getenv('HOST')
+
+
+def get_redis_host():
+    """Если мы в Docker контейнере, используем 'redis'
+       Проверяем по наличию Docker-специфичных переменных окружения"""
+    if os.getenv('DOCKER_CONTAINER') or os.path.exists('/.dockerenv'):
+        return 'redis'
+    else:
+        return os.getenv('HOST')
+
+
 ALLOWED_HOSTS = []
 
 # Application definition
@@ -69,15 +88,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+DB_HOST = os.getenv("HOST", "localhost")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": os.getenv("NAME"),
         "USER": os.getenv("USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("HOST"),
-        "PORT": os.getenv("PORT"),
+        "HOST": get_database_host(),
+        "PORT": os.getenv("PORT", "5432"),
     }
 }
 
@@ -158,15 +177,17 @@ EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")  # Ваш yandex email
 SERVER_EMAIL = os.getenv("EMAIL_HOST_USER")  # Для ошибок
 
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/2",
+        "LOCATION": f"redis://{get_redis_host()}:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
         "KEY_PREFIX": "mail_service_",
-        "TIMEOUT": 60 * 15,  # 15 минут
+        "TIMEOUT": 60 * 15,
     }
 }
 
@@ -179,10 +200,9 @@ STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 
 API_KEY_FOR_APILAYER = os.getenv("API_KEY_FOR_APILAYER", "")
 
-
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_BROKER_URL = f'redis://{get_redis_host()}:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'

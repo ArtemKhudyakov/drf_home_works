@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${NAME}
+      POSTGRES_USER: ${USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DOCKER_CONTAINER=true
+      - DEBUG=${DEBUG}
+      - SECRET_KEY=${SECRET_KEY}
+      - NAME=${NAME}
+      - USER=${USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - HOST=db
+      - PORT=5432
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - API_KEY_FOR_APILAYER=${API_KEY_FOR_APILAYER}
+    depends_on:
+      - db
+      - redis
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  postgres_data:
